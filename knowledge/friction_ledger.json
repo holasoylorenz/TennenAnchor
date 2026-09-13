@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated_at": "2026-09-13T18:35:52.568992+00:00",
+  "updated_at": "2026-09-13T18:41:28.408459+00:00",
   "events": [
     {
       "id": "fric_ltspice_001",
@@ -49,6 +49,18 @@
       "resolution": "Send Ctrl+W to close active tab prior to Ctrl+O reload.",
       "refinement": "Update open_schematic recipe to issue Ctrl+W if the document is already active.",
       "occurrences": 1
+    },
+    {
+      "id": "fric_ltspice_005",
+      "app": "ltspice",
+      "action": "recipe:run_simulation:step_1:click_control",
+      "category": "EXECUTION_ERROR",
+      "symptom": "Target control 'Run/Pause' not found in active window.",
+      "timestamp": "2026-09-13T18:41:28.408456+00:00",
+      "severity": "high",
+      "resolution": null,
+      "refinement": null,
+      "occurrences": 2
     }
   ]
 }

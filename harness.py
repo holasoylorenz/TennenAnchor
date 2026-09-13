@@ -285,9 +285,7 @@ def main() -> None:
     elif args.command == "sync":
         cmd_sync(args)
     else:
-        # Default behavior: run inspect
-        args.query = None
-        cmd_inspect(args)
+        parser.print_help()
 
 
 if __name__ == "__main__":

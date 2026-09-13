@@ -25,7 +25,7 @@ def test_mcp_initialize():
 
 
 def test_mcp_tools_list():
-    """Verifies that tools/list exposes all 4 streamlined desktop tools."""
+    """Verifies that tools/list exposes all 7 streamlined desktop tools."""
     req = {
         "jsonrpc": "2.0",
         "id": 2,

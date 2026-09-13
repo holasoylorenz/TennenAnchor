@@ -155,9 +155,10 @@ class AppRecipe:
     precondition: Optional[str] = None
     postcondition: Optional[str] = None
     failure_policy: str = "recover_via_ledger"  # abort, retry, recover_via_ledger
+    artifact_postconditions: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        d = {
             "recipe_id": self.recipe_id,
             "name": self.name,
             "description": self.description,
@@ -169,6 +170,9 @@ class AppRecipe:
             "failure_policy": self.failure_policy,
             "steps": [s.to_dict() for s in self.steps],
         }
+        if self.artifact_postconditions:
+            d["artifact_postconditions"] = self.artifact_postconditions
+        return d
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> AppRecipe:
@@ -182,6 +186,7 @@ class AppRecipe:
             precondition=data.get("precondition"),
             postcondition=data.get("postcondition"),
             failure_policy=data.get("failure_policy", "recover_via_ledger"),
+            artifact_postconditions=data.get("artifact_postconditions"),
             steps=[RecipeStep.from_dict(s) for s in data.get("steps", [])],
         )
 

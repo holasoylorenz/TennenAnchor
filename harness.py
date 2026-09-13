@@ -166,9 +166,63 @@ def cmd_recipe(args: argparse.Namespace) -> None:
     print(f"Duration        : {res.get('duration_ms')}ms")
     print(f"Initial State   : {res.get('initial_state')}")
     print(f"Final State     : {res.get('final_state')}")
+    if res.get("pinned_hwnd"):
+        print(f"Pinned HWND     : {res.get('pinned_hwnd')}")
+    if res.get("artifacts"):
+        print(f"Artifacts       : {json.dumps(res.get('artifacts'), indent=2)}")
     if res.get("error"):
         print(f"Error           : {res.get('error')}")
     print("-------------------------------------------\n")
+
+
+def cmd_launch(args: argparse.Namespace) -> None:
+    """Ensures an application is running via the AppLifecycleBroker."""
+    from core.lifecycle import AppLifecycleBroker
+    registry = ProfileRegistry()
+    profile = registry.get(args.app)
+    if not profile:
+        print(f"Error: App profile '{args.app}' not found.")
+        sys.exit(1)
+
+    broker = AppLifecycleBroker()
+    print(f"Resolving and launching '{profile.name}' ({profile.app_id})...")
+    try:
+        hwnd = broker.ensure_running(profile)
+        print(f"Successfully launched/focused '{profile.name}' (HWND: {hwnd}).")
+    except Exception as e:
+        print(f"Launch failed: {e}")
+
+
+def cmd_sync(args: argparse.Namespace) -> None:
+    """Checks buffer synchronization and file hash status."""
+    from core.buffer_sync import BufferSyncManager
+    from core.lifecycle import AppLifecycleBroker
+    from pathlib import Path
+
+    doc_path = Path(args.path).resolve()
+    if not doc_path.exists():
+        print(f"Error: File '{doc_path}' does not exist on disk.")
+        sys.exit(1)
+
+    sync = BufferSyncManager()
+    h = sync.compute_file_hash(doc_path)
+
+    broker = AppLifecycleBroker()
+    registry = ProfileRegistry()
+    profile = registry.get(args.app) if args.app else None
+    hwnd = broker.find_app_window(profile) if profile else None
+
+    plan = sync.plan_reload_strategy(hwnd, doc_path, app_id=args.app or "generic")
+
+    print(f"\n--- Buffer Synchronization Status: {doc_path.name} ---")
+    print(f"File Path    : {doc_path}")
+    print(f"SHA-256 Hash : {h}")
+    print(f"Active in GUI: {plan['is_active']} (HWND: {hwnd or 'Not Found'})")
+    print(f"Plan Strategy: {plan['strategy']}")
+    print(f"Reason       : {plan['reason']}")
+    if plan.get("requires_close_hotkey"):
+        print(f"Close Hotkey : {plan['requires_close_hotkey']}")
+    print("------------------------------------------------------\n")
 
 
 def main() -> None:
@@ -203,6 +257,15 @@ def main() -> None:
     p_recipe.add_argument("recipe", type=str, help="Recipe ID (e.g. run_simulation)")
     p_recipe.add_argument("--params", "-p", nargs="*", help="Key=value parameters (e.g. path=file.asc)")
 
+    # Launch (Lifecycle Broker)
+    p_launch = subparsers.add_parser("launch", help="Ensure app is running and focused via Shell COM Broker")
+    p_launch.add_argument("app", type=str, help="Application ID (e.g. ltspice)")
+
+    # Sync (Buffer Sync Manager)
+    p_sync = subparsers.add_parser("sync", help="Check document synchronization status against active GUI")
+    p_sync.add_argument("path", type=str, help="Path to document file on disk")
+    p_sync.add_argument("--app", "-a", type=str, default=None, help="Application ID (e.g. ltspice)")
+
     args = parser.parse_args()
 
     if args.command == "inspect":
@@ -217,6 +280,10 @@ def main() -> None:
         cmd_ast(args)
     elif args.command == "recipe":
         cmd_recipe(args)
+    elif args.command == "launch":
+        cmd_launch(args)
+    elif args.command == "sync":
+        cmd_sync(args)
     else:
         # Default behavior: run inspect
         args.query = None

@@ -12,14 +12,25 @@ from typing import Any, Dict, Optional
 
 from actuation.controller import DesktopController
 from core.app_ast import AppProfile, AppRecipe, RecipeStep, ProfileRegistry
+from core.buffer_sync import BufferSyncManager
+from core.dual_observer import DualChannelObserver
+from core.lifecycle import AppLifecycleBroker
 from core.struggle_tracker import StruggleTracker
 from perception.edge_parser import EdgeUIAParser
+
+import ctypes
+user32 = ctypes.windll.user32
 
 logger = logging.getLogger("desktop_harness.playbook_runner")
 
 
 class PlaybookRunner:
-    """Executes verified macro recipes from AppProfile graphs."""
+    """
+    Pinned Transaction Runner (Harness 2.0).
+    Executes verified macro recipes from AppProfile graphs with
+    managed lifecycle attachment, buffer synchronization, focus pinning,
+    and dual-channel artifact verification.
+    """
 
     def __init__(
         self,
@@ -27,11 +38,17 @@ class PlaybookRunner:
         parser: Optional[EdgeUIAParser] = None,
         tracker: Optional[StruggleTracker] = None,
         registry: Optional[ProfileRegistry] = None,
+        broker: Optional[AppLifecycleBroker] = None,
+        buffer_sync: Optional[BufferSyncManager] = None,
+        dual_observer: Optional[DualChannelObserver] = None,
     ) -> None:
         self.controller = controller or DesktopController()
         self.parser = parser or EdgeUIAParser()
         self.tracker = tracker or StruggleTracker()
         self.registry = registry or ProfileRegistry()
+        self.broker = broker or AppLifecycleBroker(controller=self.controller)
+        self.buffer_sync = buffer_sync or BufferSyncManager()
+        self.dual_observer = dual_observer or DualChannelObserver(parser=self.parser)
 
     def _interpolate(self, template: str, params: Dict[str, Any]) -> str:
         """Replaces {param} placeholders in strings."""
@@ -48,8 +65,8 @@ class PlaybookRunner:
         hwnd: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
-        Executes a recipe step-by-step.
-        Returns execution summary dict with status, step counts, and final state.
+        Executes a recipe step-by-step as a pinned transaction.
+        Returns execution summary dict with status, step counts, final state, and extracted artifacts.
         """
         params = params or {}
         recipe = profile.recipes.get(recipe_id)
@@ -63,8 +80,27 @@ class PlaybookRunner:
         t0 = time.perf_counter()
         logger.info("Executing recipe '%s' for '%s' with params: %s", recipe_id, profile.app_id, params)
 
-        if hwnd:
-            self.controller.force_focus_window(hwnd)
+        # 1. Lifecycle Resolution & Target HWND Pinning
+        pinned_hwnd = hwnd
+        if not pinned_hwnd:
+            pinned_hwnd = self.broker.find_app_window(profile)
+            if not pinned_hwnd:
+                try:
+                    pinned_hwnd = self.broker.ensure_running(profile)
+                except Exception as launch_err:
+                    logger.warning("Could not auto-ensure running '%s': %s", profile.app_id, launch_err)
+
+        if pinned_hwnd:
+            self.controller.force_focus_window(pinned_hwnd)
+
+        # 2. Buffer Synchronization (Disk vs GUI Working Buffer)
+        doc_path = params.get("path") or params.get("file")
+        if doc_path:
+            plan = self.buffer_sync.plan_reload_strategy(pinned_hwnd, doc_path, profile.app_id)
+            if plan.get("strategy") == "discard_buffer_then_open" and plan.get("requires_close_hotkey"):
+                logger.info("BufferSyncManager: Discarding active in-memory buffer via %s prior to reload", plan["requires_close_hotkey"])
+                self.controller.hotkey(plan["requires_close_hotkey"])
+                time.sleep(0.3)
 
         # Pre-execution perception check
         initial_res = self.parser.parse_active_window()
@@ -77,8 +113,16 @@ class PlaybookRunner:
         total_steps = len(recipe.steps)
 
         for idx, step in enumerate(recipe.steps, 1):
+            # Focus Invariant Guard: re-assert focus if background events caused drift
+            if pinned_hwnd:
+                fg = user32.GetForegroundWindow()
+                if fg != pinned_hwnd:
+                    logger.debug("Focus drift detected (FG: %s != Target: %s). Re-asserting focus...", fg, pinned_hwnd)
+                    self.controller.force_focus_window(pinned_hwnd)
+                    time.sleep(0.08)
+
             try:
-                self._execute_step(step, params, profile, hwnd)
+                self._execute_step(step, params, profile, pinned_hwnd)
                 steps_done += 1
 
                 if step.wait_ms > 0:
@@ -88,9 +132,9 @@ class PlaybookRunner:
                 recovered = False
                 if step.recovery_policy != "abort" and getattr(recipe, "failure_policy", "") == "recover_via_ledger":
                     try:
-                        if self._attempt_recovery_from_ledger(step, e, profile, hwnd):
+                        if self._attempt_recovery_from_ledger(step, e, profile, pinned_hwnd):
                             logger.info("Retrying step %d/%d after applying ledger recovery...", idx, total_steps)
-                            self._execute_step(step, params, profile, hwnd)
+                            self._execute_step(step, params, profile, pinned_hwnd)
                             recovered = True
                             steps_done += 1
                             if step.wait_ms > 0:
@@ -118,9 +162,14 @@ class PlaybookRunner:
                         "total_steps": total_steps,
                         "error": err_msg,
                         "initial_state": initial_state,
+                        "pinned_hwnd": pinned_hwnd,
                     }
 
-        # Post-execution state classification
+        # Record loaded document in buffer sync manager
+        if doc_path:
+            self.buffer_sync.record_document_loaded(doc_path, pinned_hwnd)
+
+        # Post-execution state classification (Channel A)
         post_res = self.parser.parse_active_window()
         final_state = profile.classify_state(
             post_res.get("window", ""),
@@ -130,7 +179,7 @@ class PlaybookRunner:
         dt_ms = (time.perf_counter() - t0) * 1000.0
         logger.info("Recipe '%s' completed successfully in %.1fms. Final state: %s", recipe_id, dt_ms, final_state)
 
-        return {
+        result_payload = {
             "status": "ok",
             "recipe": recipe_id,
             "steps_completed": steps_done,
@@ -138,8 +187,21 @@ class PlaybookRunner:
             "initial_state": initial_state,
             "final_state": final_state,
             "duration_ms": round(dt_ms, 1),
+            "pinned_hwnd": pinned_hwnd,
             "window": post_res.get("window"),
         }
+
+        # Dual-Channel Artifact Extraction (Channel B)
+        artifact_spec = getattr(recipe, "artifact_postconditions", None)
+        if artifact_spec and isinstance(artifact_spec, dict):
+            art_file = self._interpolate(artifact_spec.get("file", ""), params)
+            art_patterns = artifact_spec.get("extract_patterns", {})
+            if art_file:
+                art_obs = self.dual_observer.observe_artifact(art_file, extract_patterns=art_patterns)
+                result_payload["artifacts"] = art_obs.get("metrics", {})
+                logger.info("Channel B extracted artifact metrics: %s", result_payload["artifacts"])
+
+        return result_payload
 
     def _execute_step(
         self,

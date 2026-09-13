@@ -41,10 +41,14 @@ def test_playbook_runner_successful_execution(tmp_path: Path):
         recipes={"open_schematic": recipe},
     )
 
+    mock_broker = MagicMock()
+    mock_broker.find_app_window.return_value = 12345
+
     runner = PlaybookRunner(
         controller=mock_controller,
         parser=mock_parser,
         tracker=tracker,
+        broker=mock_broker,
     )
 
     res = runner.execute(
@@ -56,10 +60,11 @@ def test_playbook_runner_successful_execution(tmp_path: Path):
     assert res["status"] == "ok"
     assert res["steps_completed"] == 2
     assert res["total_steps"] == 2
+    assert res["pinned_hwnd"] == 12345
 
-    # Verify controller calls
-    mock_controller.hotkey.assert_called_once_with(["ctrl", "o"], target_hwnd=None)
-    mock_controller.type_text.assert_called_once_with("C:/test/circuit.asc", press_enter=True, target_hwnd=None)
+    # Verify controller calls pinned to HWND
+    mock_controller.hotkey.assert_called_once_with(["ctrl", "o"], target_hwnd=12345)
+    mock_controller.type_text.assert_called_once_with("C:/test/circuit.asc", press_enter=True, target_hwnd=12345)
 
 
 def test_playbook_runner_failure_captures_friction(tmp_path: Path):
@@ -77,7 +82,14 @@ def test_playbook_runner_failure_captures_friction(tmp_path: Path):
     recipe = AppRecipe(recipe_id="failing_recipe", name="Fail", description="Fails", steps=[step])
     profile = AppProfile(app_id="testapp", name="TestApp", recipes={"failing_recipe": recipe})
 
-    runner = PlaybookRunner(controller=mock_controller, parser=mock_parser, tracker=tracker)
+    mock_broker = MagicMock()
+    mock_broker.find_app_window.return_value = 12345
+    runner = PlaybookRunner(
+        controller=mock_controller,
+        parser=mock_parser,
+        tracker=tracker,
+        broker=mock_broker,
+    )
     res = runner.execute(profile=profile, recipe_id="failing_recipe")
 
     assert res["status"] == "error"

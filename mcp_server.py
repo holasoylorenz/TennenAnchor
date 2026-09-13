@@ -459,12 +459,21 @@ def handle_app_execute_recipe(params: Dict[str, Any]) -> str:
     if res.get("status") != "ok":
         return f"[RECIPE FAILED]: {res.get('error')} (Completed {res.get('steps_completed')}/{res.get('total_steps')} steps)"
 
-    return (
-        f"[RECIPE SUCCESS: {recipe_id}]\n"
-        f"Completed {res.get('steps_completed')}/{res.get('total_steps')} steps in {res.get('duration_ms')}ms.\n"
-        f"State: {res.get('initial_state')} -> {res.get('final_state')}\n"
-        f"Active Window: {res.get('window')}"
-    )
+    if res.get("pinned_hwnd"):
+        LATEST_STATE["hwnd"] = res.get("pinned_hwnd")
+
+    out_lines = [
+        f"[RECIPE SUCCESS: {recipe_id}]",
+        f"Completed {res.get('steps_completed')}/{res.get('total_steps')} steps in {res.get('duration_ms')}ms.",
+        f"State: {res.get('initial_state')} -> {res.get('final_state')}",
+        f"Active Window: {res.get('window')}",
+    ]
+    if res.get("pinned_hwnd"):
+        out_lines.append(f"Pinned HWND: {res.get('pinned_hwnd')}")
+    if res.get("artifacts"):
+        out_lines.append(f"Extracted Artifacts: {json.dumps(res.get('artifacts'), indent=2)}")
+
+    return "\n".join(out_lines)
 
 
 def handle_app_record_struggle(params: Dict[str, Any]) -> str:

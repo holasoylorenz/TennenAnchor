@@ -20,7 +20,7 @@ In native Windows environments with complex desktop software, this pattern break
 
 ---
 
-## Architecture
+## Architecture (Harness 2.0)
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -35,50 +35,62 @@ In native Windows environments with complex desktop software, this pattern break
 |  +-------------------------------------+   +-----------------------------------+  |
 |  |     App-AST & Playbook Engine       |   |    Struggle & Friction Ledger     |  |
 |  | - State Predicate Matching (<15ms)  |   | - Action Error & Retry Telemetry  |  |
-|  | - 1-Turn Macro Recipe Execution    |   | - Workaround & Refinement Logging |  |
-|  | - Profile Storage (knowledge/apps/) |   | - CLI Gap Analysis (harness.py)   |  |
+|  | - Pinned Transaction Runner         |   | - Workaround & Refinement Logging |  |
+|  | - Profile Storage (knowledge/apps/) |   | - Dynamic Self-Healing via Ledger |  |
 |  +-------------------------------------+   +-----------------------------------+  |
-|               |                                                ^                  |
-|        Perception Call                                   Action Call              |
-|               v                                                |                  |
-|  +---------------------------+               +---------------------------------+  |
-|  |    Dual-Tier Perception   |               |     Unified Actuation Engine    |  |
-|  |                           |               |                                 |  |
-|  | Tier 1: Local UIA Edge    |   Escalate    | - Per-Monitor v2 DPI Transform  |  |
-|  | - 2.0s Threaded Timeout   | ------------> | - Win32 Thread Input Attachment |  |
-|  | - Delta State Compression |  (Fallback)   | - AGY Terminal Suicide Guard    |  |
-|  | - ~45 Tokens / Inspection |               | - Caught FailSafe Recovery      |  |
-|  |                           |               |                                 |  |
-|  | Tier 2: Visual Escalation |               |                                 |  |
-|  | - Max 1280px Lanczos PNG  |               |                                 |  |
-|  | - Physical Rect Transform |               |                                 |  |
-|  +---------------------------+               +---------------------------------+  |
-+----------------------------------------------------------------|------------------+
-                                                                 v
-                                                     Windows Desktop Environment
+|               |                 |                                  ^              |
+|        Channel A (UI)    Channel B (Disk)                    Action Call          |
+|               v                 v                                  |              |
+|  +-------------------------------------+   +-----------------------------------+  |
+|  |       Dual-Channel Observer         |   |      App Lifecycle Broker         |  |
+|  |                                     |   | - Shell.Application COM Dispatch  |  |
+|  | Tier 1: Local UIA Edge (<35ms)      |   | - ctypes unicode window discovery |  |
+|  | Tier 2: Visual Escalation (1280px)  |   | - Interactive session attachment  |  |
+|  | Channel B: Artifact Metrics (Regex) |   +-----------------------------------+  |
+|  +-------------------------------------+                     |                    |
+|                                                              v                    |
+|                                            +-----------------------------------+  |
+|                                            |      Buffer Synchronization       |  |
+|                                            | - Disk sha256 vs GUI window title |  |
+|                                            | - Tab invalidation (Ctrl+W reload)|  |
+|                                            | - Active working buffer tracking  |  |
+|                                            +-----------------------------------+  |
++--------------------------------------------------------------|--------------------+
+                                                               v
+                                                   Windows Desktop Environment
 ```
 
 ---
 
 ## Key Subsystems
 
-### 1. Dual-Tier Perception
-- **Tier 1 (Edge AI UIA Crawl)**: Inspects the active foreground window in `<35ms` with a 2.0s threaded watchdog. Extracts interactive controls (`Button`, `Edit`, `MenuItem`, `ComboBox`, `TabItem`, `CheckBox`) and formats them into an ultra-compact string (~45 tokens) with smart delta compression across consecutive turns.
-- **Tier 2 (Visual Escalation Fallback)**: Automatically triggers when Tier 1 detects 0 controls (e.g. custom canvases, games) or times out. Captures a physical multi-monitor screenshot via `mss`, resizes it preserving aspect ratio (max dimension 1280px) via Lanczos filtering, and emits coordinate mapping metadata for vision grounding.
+### 1. Interactive Application Lifecycle Broker (`core/lifecycle.py`)
+- **Interactive Shell COM Dispatch**: Bypasses headless background traps (`Session 0` detachment) by launching target applications through the Windows Shell COM broker (`Shell.Application` $\to$ `ShellExecute`), ensuring processes run on the user's interactive desktop (`winsta0\default`).
+- **Robust ctypes Window Discovery**: Discovers running top-level windows using `ctypes.windll.user32.EnumWindows` with unicode buffers, bypassing pywin32 trampolining issues on Python 3.13.
+- **Warm-Up Watchdog**: Polls for valid non-zero-sized top-level HWNDs and automatically asserts foreground focus prior to dispatching actions.
 
-### 2. Application State Tree (App-AST)
-Models applications as directed graphs of UI states and transitions:
-- **State Nodes**: Detected via boolean predicates over window titles, active control signatures, and element count bounds.
-- **Verified Recipes**: Multi-step action macros (e.g. `open_schematic`, `run_simulation`, `plot_traces`) executed deterministically in a single conversational turn, reducing token consumption by up to 80%.
-- **Pre-Seeded Profiles**: Ships with verified profiles for **LTspice** and **Microsoft Word** in `knowledge/apps/`.
+### 2. Working Buffer Synchronization Manager (`core/buffer_sync.py`)
+- **In-Memory Buffer vs. Disk State**: In native desktop software (e.g. LTspice, text editors, CAD), modifying a file on disk while the GUI has the document open causes silent failures (the application ignores on-disk changes because the tab is already loaded).
+- **Active Document Detection**: Inspects active window titles and caption signatures to identify whether the target file is currently displayed in the GUI.
+- **Buffer Invalidation Planning**: Computes optimal reload strategies. If a file is dirty on disk and open in the GUI, it executes a clean tab discard (`Ctrl+W`) before triggering the open sequence (`Ctrl+O`).
 
-### 3. Struggle & Friction Ledger
+### 3. Pinned Transaction Runner (`core/playbook_runner.py`)
+- **HWND Pinning**: Binds multi-step recipes to specific application window handles.
+- **Pre-Event Focus Invariant Guards**: Prior to dispatching every keystroke or click, checks `GetForegroundWindow()` against the pinned `HWND` and re-asserts focus if OS notifications or background tasks caused focus drift.
+- **Friction-Driven Self-Healing**: Consults the persistent friction ledger to dynamically apply known workarounds if an intermediate step encounters an unhandled UI state.
+
+### 4. Dual-Channel Observer (`core/dual_observer.py`)
+- **Channel A (UI State)**: Tier 1 Edge UIA crawl (<35ms, ~45 tokens) with automated fallback to Tier 2 screenshot capture (1280px Lanczos) when custom canvases have 0 accessibility controls.
+- **Channel B (Ground-Truth Artifact Extraction)**: Parses domain output artifacts (simulation `.log` files, netlists, `.csv`, `.raw`) using regex extractors to parse numerical metrics and status flags.
+- **Closed-Loop Verification**: Combines both channels so the agent asserts not just *"button was clicked"*, but *"simulation completed with $A_0 = 64.3\text{ dB}$ and $GBW = 15.42\text{ MHz}$"*.
+
+### 5. Struggle & Friction Ledger (`core/struggle_tracker.py`)
 A persistent telemetry store (`knowledge/friction_ledger.json`) tracking operational friction points:
 - Categorizes failures (`EXECUTION_ERROR`, `STATE_MISMATCH`, `UNRESPONSIVE_MECHANISM`, `AGENT_FRICTION`).
 - Deduplicates and tallies hit counts.
 - Stores verified workarounds and refinement recommendations for subsequent agent sessions.
 
-### 4. Coordinate & System Safety
+### 6. Coordinate & System Safety
 - **Per-Monitor v2 DPI Awareness**: Normalizes physical screen capture and PyAutoGUI cursor positioning across scaled displays (100% to 200%).
 - **Interactive Desktop Binding**: Uses `OpenInputDesktop` and `SetThreadDesktop` to ensure background workers operate inside the user's interactive session.
 - **Terminal Suicide Guard**: Inspects process trees to block accidental closing (`Alt+F4` or click) of the agent's host terminal.
@@ -117,23 +129,37 @@ Workload simulation: Multi-step engineering workflow (e.g. open schematic $\to$ 
 
 ---
 
-## Case Study: Automating Engineering Software (LTspice)
+## Case Studies: Real-World EDA Verification (LTspice)
 
 Complex native desktop software (CAD/EDA/simulation tools) exposes the limits of generic vision-only computer-use agents. In LTspice, the schematic and waveform surfaces are custom GDI/DirectX canvases with zero accessibility nodes, while toolbar buttons are native Win32 controls.
 
-`desktop-control-harness` executes the complete engineering workflow:
+### Case 1: Inverting Buck-Boost DC-DC Converter
+```
+[Agent Goal] "Synthesize 12V -> -5V Buck-Boost Converter, simulate 5ms startup transient, verify inductor current ripple."
+     │
+     ├── 1. Generates netlist: outputs/buck_boost.asc (P-MOSFET, Schottky diode, L=47uH, C=100uH)
+     ├── 2. Lifecycle Broker: Resolves LTspice.exe via Shell COM and attaches to HWND
+     ├── 3. Buffer Sync: Discards stale buffer tab if already open, cleanly reloads on-disk ASC
+     ├── 4. Pinned Recipe: Executes open_schematic + run_simulation with focus invariant protection
+     └── 5. Dual-Channel Verification: Verifies steady-state V(out) = -4.98V with <50mV ripple in 2.6s
+```
+
+### Case 2: Two-Stage Miller OTA Closed-Loop Parameter Optimization
+Evaluating automated circuit parameter tuning with dual-channel verification ($A_0$ DC gain and Gain-Bandwidth Product GBW):
 
 ```
-[Agent Goal] "Simulate amplifier circuit, plot waveforms, and measure -3dB bandwidth."
+[Agent Goal] "Design CMOS Miller OTA for target GBW, then dynamically re-tune for a different GBW specification."
      │
-     ├── 1. Generates netlist / schematic: outputs/amplifier.asc (Version 4, SHEET, WIRE, SYMBOL)
-     ├── 2. Invokes App-AST Recipe: open_schematic(path="outputs/amplifier.asc")
-     │      └─ In-app Ctrl+O sequence bypassing OS shell routing (discovered via friction ledger)
-     ├── 3. Invokes App-AST Recipe: run_simulation()
-     │      └─ Clicks Run/Pause (#7) and verifies transition to waveform_active state
-     ├── 4. Invokes App-AST Recipe: open_trace_picker() + Selects V(out), V(in)
-     │      └─ Renders dual waveforms in 2 turns instead of 15 manual steps
-     └── 5. Verifies Output & Measurement: f_-3dB = 1.73 MHz
+     ├── Trial 1 (C_c = 1.0 pF):
+     │      ├── Synthesizes schematic outputs/miller_ota.asc with .ac dec 20 1 100Meg and .meas directives
+     │      ├── Invokes Pinned Recipe: open_schematic + run_simulation (Execution time: 4.1s)
+     │      └── Channel B Verification: Extracted A_0 = 64.35 dB, GBW = 15.42 MHz from outputs/miller_ota.log
+     │
+     └── Trial 2 (C_c = 4.7 pF - Parameter Retuning):
+            ├── Modifies compensation capacitor on disk without human intervention
+            ├── BufferSyncManager detects document dirty on disk vs GUI tab; enforces [ctrl, w] buffer discard
+            ├── Invokes Pinned Recipe: reloads updated netlist and simulates (Execution time: 2.4s)
+            └── Channel B Verification: Extracted A_0 = 64.35 dB, GBW = 3.32 MHz (41.5% speedup vs Trial 1)
 ```
 
 ---
@@ -168,7 +194,7 @@ The MCP server adheres strictly to stdio JSON-RPC 2.0 with stream isolation (all
 | `desktop_act` | `action`, `element_id`, `coordinates`, `text`, `keys`, `key` | Unified mouse/keyboard actuation by `#ID` or physical/normalized coordinates. |
 | `desktop_step` | `action`, `element_id`, `text`, `keys`, `wait_ms` | Composite turn: Acts + Waits for UI + Returns post-state in 1 turn (~35 tokens). |
 | `app_query` | `app` | Inspects App-AST profile, state hierarchy, verified recipes, and logged struggles. |
-| `app_execute_recipe` | `app`, `recipe`, `params` | Runs a multi-step App-AST macro recipe in a single turn with condition verification. |
+| `app_execute_recipe` | `app`, `recipe`, `params` | Runs a multi-step App-AST macro recipe pinned to HWND with dual-channel verification. |
 | `app_record_struggle`| `app`, `action`, `symptom`, `resolution`, `refinement` | Persists an operational friction point or quirk for agent self-refinement. |
 
 ---
@@ -185,6 +211,16 @@ py -3 harness.py benchmark
 py -3 harness.py inspect
 # Filter controls by name:
 py -3 harness.py inspect --query "Run"
+```
+
+### Ensure Application is Running (Lifecycle Broker)
+```powershell
+py -3 harness.py launch ltspice
+```
+
+### Check Working Buffer Synchronization (Buffer Sync)
+```powershell
+py -3 harness.py sync outputs/miller_ota.asc --app ltspice
 ```
 
 ### Query App-AST Profiles

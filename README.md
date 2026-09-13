@@ -88,10 +88,44 @@ A persistent telemetry store (`knowledge/friction_ledger.json`) tracking operati
 | :--- | :--- | :--- | :--- |
 | **Tier 1: UIA Edge (Full)** | 25–40 ms | ~400 bytes | ~45 tokens |
 | **Tier 1: UIA Edge (Delta)** | 15–25 ms | ~80 bytes | ~15 tokens |
-| **Tier 2: Visual Screenshot** | 220–320 ms | 150–250 KB (PNG) | ~700 tokens |
+| **Tier 2: Visual Screenshot** | 170–270 ms | 150–250 KB (PNG) | ~700 tokens |
 | **App-AST Recipe Execution** | Deterministic | Single JSON-RPC turn | ~35 tokens |
 
-*15-step benchmark verification: Cumulative token consumption across 15 interactive steps remains strictly `< 1,200 tokens` (compared to 45,000+ tokens with raw tree dumps).*
+*Detailed empirical methodology, hardware environment, and token breakdown available in [BENCHMARK.md](BENCHMARK.md).*
+
+---
+
+## Case Study: Automating Engineering Software (LTspice)
+
+Complex native desktop software (CAD/EDA/simulation tools) exposes the limits of generic vision-only computer-use agents. In LTspice, the schematic and waveform surfaces are custom GDI/DirectX canvases with zero accessibility nodes, while toolbar buttons are native Win32 controls.
+
+`desktop-control-harness` executes the complete engineering workflow:
+
+```
+[Agent Goal] "Design a 10x Op-Amp amplifier in LTspice, simulate 3ms transient, and plot Vout and Vin."
+     │
+     ├── 1. Generates netlist / schematic: outputs/amplifier.asc (Version 4, SHEET, WIRE, SYMBOL)
+     ├── 2. Invokes App-AST Recipe: open_schematic(path="outputs/amplifier.asc")
+     │      └─ In-app Ctrl+O sequence bypassing OS shell routing (discovered via friction ledger)
+     ├── 3. Invokes App-AST Recipe: run_simulation()
+     │      └─ Clicks Run/Pause (#7) and verifies transition to waveform_active state
+     └── 4. Invokes App-AST Recipe: open_trace_picker() + Selects V(out), V(in)
+            └─ Renders dual waveforms in 2 turns instead of 15 manual steps
+```
+
+---
+
+## Action Risk & Safety Hierarchy
+
+To safeguard host environments, every desktop action is classified prior to execution:
+
+| Risk Level | Actions | Side-Effect Profile | Enforcement Policy |
+| :--- | :--- | :--- | :--- |
+| **`READ`** | `inspect`, `screenshot`, `query`, `ast`, `struggles` | Zero side-effects. Safe to run unconditionally. | Automatically permitted |
+| **`LOW_RISK_WRITE`** | `click`, `move`, `scroll`, `type`, `press_key` | Standard UI interactions within foreground window. | Permitted with bounds checking |
+| **`HIGH_RISK_WRITE`** | `hotkey`, `close`, `drag`, `execute`, `recipe` | State-modifying, file-altering, or composite procedures. | Logged & pre-validated |
+| **`CRITICAL_BLOCKED`** | Host terminal closure, `Alt+F4` on agent process, `Ctrl+Alt+Del` | Fatal disruption or host agent termination. | **Hard blocked by process tree guard** |
+
 
 ---
 

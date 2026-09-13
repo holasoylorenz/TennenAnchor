@@ -85,26 +85,40 @@ class PlaybookRunner:
                     time.sleep(step.wait_ms / 1000.0)
 
             except Exception as e:
-                err_msg = f"Step {idx}/{total_steps} ({step.action}) failed: {e}"
-                logger.error("Playbook execution error in %s: %s", recipe_id, err_msg)
+                recovered = False
+                if step.recovery_policy != "abort" and getattr(recipe, "failure_policy", "") == "recover_via_ledger":
+                    try:
+                        if self._attempt_recovery_from_ledger(step, e, profile, hwnd):
+                            logger.info("Retrying step %d/%d after applying ledger recovery...", idx, total_steps)
+                            self._execute_step(step, params, profile, hwnd)
+                            recovered = True
+                            steps_done += 1
+                            if step.wait_ms > 0:
+                                time.sleep(step.wait_ms / 1000.0)
+                    except Exception as retry_err:
+                        e = retry_err
 
-                # Automatic friction telemetry capture
-                self.tracker.record(
-                    app=profile.app_id,
-                    action=f"recipe:{recipe_id}:step_{idx}:{step.action}",
-                    category="EXECUTION_ERROR",
-                    symptom=str(e),
-                    severity="high",
-                )
+                if not recovered:
+                    err_msg = f"Step {idx}/{total_steps} ({step.action}) failed: {e}"
+                    logger.error("Playbook execution error in %s: %s", recipe_id, err_msg)
 
-                return {
-                    "status": "error",
-                    "recipe": recipe_id,
-                    "steps_completed": steps_done,
-                    "total_steps": total_steps,
-                    "error": err_msg,
-                    "initial_state": initial_state,
-                }
+                    # Automatic friction telemetry capture
+                    self.tracker.record(
+                        app=profile.app_id,
+                        action=f"recipe:{recipe_id}:step_{idx}:{step.action}",
+                        category="EXECUTION_ERROR",
+                        symptom=str(e),
+                        severity="high",
+                    )
+
+                    return {
+                        "status": "error",
+                        "recipe": recipe_id,
+                        "steps_completed": steps_done,
+                        "total_steps": total_steps,
+                        "error": err_msg,
+                        "initial_state": initial_state,
+                    }
 
         # Post-execution state classification
         post_res = self.parser.parse_active_window()
@@ -203,3 +217,30 @@ class PlaybookRunner:
 
         else:
             raise ValueError(f"Unknown recipe action: {action}")
+
+    def _attempt_recovery_from_ledger(
+        self,
+        step: RecipeStep,
+        error: Exception,
+        profile: AppProfile,
+        hwnd: Optional[int],
+    ) -> bool:
+        """Consults the friction ledger for known resolutions to attempt dynamic self-healing."""
+        known_events = self.tracker.get_events(profile.app_id)
+        err_str = str(error).lower()
+
+        for ev in known_events:
+            if ev.resolution and (step.action in ev.action or any(w in err_str for w in ev.symptom.lower().split()[:3])):
+                logger.info("Playbook self-healing: applying known resolution from ledger: %s", ev.resolution)
+                if hwnd:
+                    self.controller.force_focus_window(hwnd)
+                time.sleep(0.3)
+                return True
+
+        if ("not found" in err_str or "unresponsive" in err_str) and hwnd:
+            logger.info("Playbook self-healing: re-focusing target window HWND %s", hwnd)
+            self.controller.force_focus_window(hwnd)
+            time.sleep(0.3)
+            return True
+
+        return False

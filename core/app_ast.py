@@ -84,15 +84,21 @@ class AppState:
     description: str
     predicate: AppPredicate
     available_recipes: List[str] = field(default_factory=list)
+    confidence: float = 1.0
+    observation_signature: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        d = {
             "state_id": self.state_id,
             "name": self.name,
             "description": self.description,
             "predicate": self.predicate.to_dict(),
             "available_recipes": self.available_recipes,
+            "confidence": self.confidence,
         }
+        if self.observation_signature:
+            d["observation_signature"] = self.observation_signature
+        return d
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> AppState:
@@ -102,6 +108,8 @@ class AppState:
             description=data.get("description", ""),
             predicate=AppPredicate.from_dict(data.get("predicate", {})),
             available_recipes=data.get("available_recipes", []),
+            confidence=float(data.get("confidence", 1.0)),
+            observation_signature=data.get("observation_signature"),
         )
 
 
@@ -115,6 +123,7 @@ class RecipeStep:
     press_enter: bool = False
     wait_ms: int = 250
     expected_state: Optional[str] = None
+    recovery_policy: Optional[str] = "retry"  # retry, fallback_hotkey, dismiss_dialog, abort
 
     def to_dict(self) -> Dict[str, Any]:
         return {k: v for k, v in asdict(self).items() if v is not None and (v is not False or k == "press_enter")}
@@ -129,6 +138,7 @@ class RecipeStep:
             press_enter=data.get("press_enter", False),
             wait_ms=data.get("wait_ms", 250),
             expected_state=data.get("expected_state"),
+            recovery_policy=data.get("recovery_policy", "retry"),
         )
 
 
@@ -142,6 +152,9 @@ class AppRecipe:
     initial_state: Optional[str] = None
     expected_final_state: Optional[str] = None
     steps: List[RecipeStep] = field(default_factory=list)
+    precondition: Optional[str] = None
+    postcondition: Optional[str] = None
+    failure_policy: str = "recover_via_ledger"  # abort, retry, recover_via_ledger
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -151,6 +164,9 @@ class AppRecipe:
             "parameters": self.parameters,
             "initial_state": self.initial_state,
             "expected_final_state": self.expected_final_state,
+            "precondition": self.precondition,
+            "postcondition": self.postcondition,
+            "failure_policy": self.failure_policy,
             "steps": [s.to_dict() for s in self.steps],
         }
 
@@ -163,6 +179,9 @@ class AppRecipe:
             parameters=data.get("parameters", []),
             initial_state=data.get("initial_state"),
             expected_final_state=data.get("expected_final_state"),
+            precondition=data.get("precondition"),
+            postcondition=data.get("postcondition"),
+            failure_policy=data.get("failure_policy", "recover_via_ledger"),
             steps=[RecipeStep.from_dict(s) for s in data.get("steps", [])],
         )
 

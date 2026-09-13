@@ -86,18 +86,25 @@ def record_showcase(
         recorder.set_status("Recipe: run_simulation (AC analysis)")
         res_sim = runner.execute(profile, "run_simulation", record=False)
         logger.info("run_simulation completed: %s", res_sim.get("status"))
-        # Allow frames to capture waveform viewer pane and simulation settling
+        # Allow frames to capture waveform viewer pane opening
+        time.sleep(2.0)
+
+        # Step C: Plot Gain & Phase vs Frequency Trace
+        recorder.set_status("Recipe: plot_trace -> V(vout) (Bode Gain & Phase)")
+        res_plot = runner.execute(profile, "plot_trace", params={"trace": "V(vout)"}, record=False)
+        logger.info("plot_trace completed: %s", res_plot.get("status"))
+        # Allow frames to clearly capture the rendered frequency and phase curves
         time.sleep(2.5)
 
-        # Step C: Dual-Channel Verification (Extract metrics from log)
+        # Step D: Dual-Channel Verification (Extract metrics from log)
         meas = parse_ota_log(log_path)
         a0 = meas.get("a0_db", "N/A")
         gbw = meas.get("gbw_mhz", "N/A")
         verified_msg = f"Dual-Channel Verified: A0={a0}dB, GBW={gbw}MHz"
         logger.info(verified_msg)
         recorder.set_status(verified_msg)
-        # Settle on final verified state so viewer can inspect
-        time.sleep(2.5)
+        # Settle on final verified state with curves, schematic, and HUD banner
+        time.sleep(3.0)
 
     finally:
         logger.info("Finalizing recording and compiling animated GIF...")

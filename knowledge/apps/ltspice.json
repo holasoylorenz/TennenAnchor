@@ -48,7 +48,7 @@
         "title_contains": "LTspice",
         "has_controls": ["Pick Visible Traces", "Zoom to rectangle"]
       },
-      "available_recipes": ["open_trace_picker"]
+      "available_recipes": ["open_trace_picker", "plot_trace"]
     },
     "trace_picker_dialog": {
       "state_id": "trace_picker_dialog",
@@ -115,6 +115,31 @@
           "action": "click_control",
           "target": "Pick Visible Traces",
           "wait_ms": 600
+        }
+      ]
+    },
+    "plot_trace": {
+      "recipe_id": "plot_trace",
+      "name": "Plot Trace",
+      "description": "Opens the trace selection dialog, selects the target net, and plots the magnitude and phase waveform.",
+      "parameters": ["trace"],
+      "initial_state": "waveform_active",
+      "expected_final_state": "waveform_active",
+      "steps": [
+        {
+          "action": "click_control",
+          "target": "Pick Visible Traces",
+          "wait_ms": 600
+        },
+        {
+          "action": "click_control",
+          "target": "{trace}",
+          "wait_ms": 300
+        },
+        {
+          "action": "click_control",
+          "target": "OK",
+          "wait_ms": 1200
         }
       ]
     }

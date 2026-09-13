@@ -62,8 +62,9 @@ Autonomous closed-loop synthesis and verification of an analog CMOS Two-Stage Mi
 > **What happens in this recording**:
 > 1. **Lifecycle Broker**: Attaches to LTspice via Windows Shell COM broker on the user's interactive desktop (`winsta0\default`).
 > 2. **Buffer Sync**: Inspects the active document, detects dirty on-disk revision, and cleanly discards the stale buffer (`Ctrl+W`).
-> 3. **App-AST Recipe Execution**: Dispatches `open_schematic` $\to$ `run_simulation` with HWND pinning and focus invariant protection.
-> 4. **Dual-Channel Verification**: Cross-verifies waveform viewer UI with SPICE solver log, extracting DC gain ($A_0 = 91.73\text{ dB}$) and Gain-Bandwidth Product ($GBW = 36.97\text{ MHz}$) in 2.0 seconds.
+> 3. **App-AST Recipe Execution**: Dispatches `open_schematic` $\to$ `run_simulation` $\to$ `plot_trace("V(vout)")` with HWND pinning and modal focus protection.
+> 4. **Live Bode Plot**: Dynamically renders the analog frequency response with solid magnitude (dB) and dashed phase (degrees) curves across 10Hz–1GHz.
+> 5. **Dual-Channel Verification**: Cross-verifies waveform viewer UI with SPICE solver log, extracting DC gain ($A_0 = 91.73\text{ dB}$) and Gain-Bandwidth Product ($GBW = 36.97\text{ MHz}$).
 
 ---
 

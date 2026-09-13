@@ -82,5 +82,6 @@ def test_mcp_desktop_escalate_call():
     assert resp is not None
     assert resp["id"] == 4
     assert resp["result"]["isError"] is False
-    text = resp["result"]["content"][0]["text"]
-    assert "TIER 2 VISUAL ESCALATION" in text
+    content = resp["result"]["content"]
+    assert any(c.get("type") == "text" and "TIER 2 VISUAL ESCALATION" in c.get("text", "") for c in content)
+    assert any(c.get("type") == "image" and len(c.get("data", "")) > 100 for c in content)

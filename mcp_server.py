@@ -299,8 +299,8 @@ def handle_desktop_inspect(params: Dict[str, Any]) -> str:
     return parser.format_compact_text(res)
 
 
-def handle_desktop_escalate(params: Dict[str, Any]) -> str:
-    """Handles Tier 2 visual escalation."""
+def handle_desktop_escalate(params: Dict[str, Any]) -> Union[str, List[Dict[str, Any]]]:
+    """Handles Tier 2 visual escalation, returning standard MCP image content and metadata."""
     target = params.get("target", "active_window")
     hwnd = LATEST_STATE.get("hwnd")
     res = escalator.capture(target=target, hwnd=hwnd)
@@ -312,13 +312,23 @@ def handle_desktop_escalate(params: Dict[str, Any]) -> str:
     LATEST_STATE["rect"] = res.get("original_rect")
     LATEST_STATE["last_escalation"] = res
 
-    return (
+    text_msg = (
         f"[TIER 2 VISUAL ESCALATION SUCCESS]\n"
         f"Saved: {res['image_path']}\n"
         f"Target: {res['target']} | Physical Rect: {res['original_rect']}\n"
         f"Scaled Size: {res['scaled_size']} (Tokens: ~700)\n"
         f"Instructions: Use desktop_act with coordinates (normalized [0, 1000] or pixels) to interact."
     )
+
+    content: List[Dict[str, Any]] = [{"type": "text", "text": text_msg}]
+    if res.get("base64_image"):
+        content.append({
+            "type": "image",
+            "data": res["base64_image"],
+            "mimeType": "image/png",
+        })
+
+    return content
 
 
 def handle_desktop_act(params: Dict[str, Any]) -> str:
@@ -538,19 +548,19 @@ def process_json_rpc(request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
         try:
             if tool_name == "desktop_inspect":
-                text_out = handle_desktop_inspect(arguments)
+                raw_out = handle_desktop_inspect(arguments)
             elif tool_name == "desktop_escalate":
-                text_out = handle_desktop_escalate(arguments)
+                raw_out = handle_desktop_escalate(arguments)
             elif tool_name == "desktop_act":
-                text_out = handle_desktop_act(arguments)
+                raw_out = handle_desktop_act(arguments)
             elif tool_name == "desktop_step":
-                text_out = handle_desktop_step(arguments)
+                raw_out = handle_desktop_step(arguments)
             elif tool_name == "app_query":
-                text_out = handle_app_query(arguments)
+                raw_out = handle_app_query(arguments)
             elif tool_name == "app_execute_recipe":
-                text_out = handle_app_execute_recipe(arguments)
+                raw_out = handle_app_execute_recipe(arguments)
             elif tool_name == "app_record_struggle":
-                text_out = handle_app_record_struggle(arguments)
+                raw_out = handle_app_record_struggle(arguments)
             else:
                 return {
                     "jsonrpc": "2.0",
@@ -558,11 +568,16 @@ def process_json_rpc(request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                     "error": {"code": -32601, "message": f"Tool '{tool_name}' not found."},
                 }
 
+            if isinstance(raw_out, list):
+                content_payload = raw_out
+            else:
+                content_payload = [{"type": "text", "text": str(raw_out)}]
+
             return {
                 "jsonrpc": "2.0",
                 "id": msg_id,
                 "result": {
-                    "content": [{"type": "text", "text": text_out}],
+                    "content": content_payload,
                     "isError": False,
                 },
             }

@@ -133,6 +133,8 @@ Workload simulation: Multi-step engineering workflow (e.g. open schematic $\to$ 
 
 Complex native desktop software (CAD/EDA/simulation tools) exposes the limits of generic vision-only computer-use agents. In LTspice, the schematic and waveform surfaces are custom GDI/DirectX canvases with zero accessibility nodes, while toolbar buttons are native Win32 controls.
 
+> **Full Walkthrough**: For the complete turn-by-turn MCP request/response trace, dynamic parameter optimization data, and reproduction scripts, see [**WALKTHROUGH.md**](WALKTHROUGH.md).
+
 ### Case 1: Inverting Buck-Boost DC-DC Converter
 ```
 [Agent Goal] "Synthesize 12V -> -5V Buck-Boost Converter, simulate 5ms startup transient, verify inductor current ripple."

@@ -226,6 +226,10 @@ TOOLS = [
                     "type": "object",
                     "description": "Key-value parameters for the recipe (e.g. {'path': 'C:/path/file.asc'}).",
                 },
+                "record": {
+                    "type": "boolean",
+                    "description": "Optional flag to record window-scoped animated GIF visual proof.",
+                },
             },
         },
     },
@@ -458,16 +462,20 @@ def handle_app_execute_recipe(params: Dict[str, Any]) -> str:
     app_id = params.get("app")
     recipe_id = params.get("recipe")
     recipe_params = params.get("params", {})
+    record = params.get("record", False)
 
     profile = registry.get(app_id)
     if not profile:
         return f"Error: App profile '{app_id}' not found."
 
     hwnd = LATEST_STATE.get("hwnd")
-    res = runner.execute(profile=profile, recipe_id=recipe_id, params=recipe_params, hwnd=hwnd)
+    res = runner.execute(profile=profile, recipe_id=recipe_id, params=recipe_params, hwnd=hwnd, record=record)
 
     if res.get("status") != "ok":
-        return f"[RECIPE FAILED]: {res.get('error')} (Completed {res.get('steps_completed')}/{res.get('total_steps')} steps)"
+        err_msg = f"[RECIPE FAILED]: {res.get('error')} (Completed {res.get('steps_completed')}/{res.get('total_steps')} steps)"
+        if res.get("recording_path"):
+            err_msg += f"\nVisual Proof (Failed): {res.get('recording_path')}"
+        return err_msg
 
     if res.get("pinned_hwnd"):
         LATEST_STATE["hwnd"] = res.get("pinned_hwnd")
@@ -480,6 +488,8 @@ def handle_app_execute_recipe(params: Dict[str, Any]) -> str:
     ]
     if res.get("pinned_hwnd"):
         out_lines.append(f"Pinned HWND: {res.get('pinned_hwnd')}")
+    if res.get("recording_path"):
+        out_lines.append(f"Visual Proof: {res.get('recording_path')}")
     if res.get("artifacts"):
         out_lines.append(f"Extracted Artifacts: {json.dumps(res.get('artifacts'), indent=2)}")
 

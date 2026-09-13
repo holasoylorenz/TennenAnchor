@@ -196,7 +196,7 @@ The MCP server adheres strictly to stdio JSON-RPC 2.0 with stream isolation (all
 | `desktop_act` | `action`, `element_id`, `coordinates`, `text`, `keys`, `key` | Unified mouse/keyboard actuation by `#ID` or physical/normalized coordinates. |
 | `desktop_step` | `action`, `element_id`, `text`, `keys`, `wait_ms` | Composite turn: Acts + Waits for UI + Returns post-state in 1 turn (~35 tokens). |
 | `app_query` | `app` | Inspects App-AST profile, state hierarchy, verified recipes, and logged struggles. |
-| `app_execute_recipe` | `app`, `recipe`, `params` | Runs a multi-step App-AST macro recipe pinned to HWND with dual-channel verification. |
+| `app_execute_recipe` | `app`, `recipe`, `params`, `record` | Runs a multi-step App-AST macro recipe pinned to HWND with dual-channel verification and optional GIF recording. |
 | `app_record_struggle`| `app`, `action`, `symptom`, `resolution`, `refinement` | Persists an operational friction point or quirk for agent self-refinement. |
 
 ---
@@ -239,9 +239,12 @@ py -3 harness.py struggles
 py -3 harness.py struggles --app ltspice
 ```
 
-### Execute a Verified Recipe
+### Execute a Verified Recipe (with Visual Proof GIF Recording)
 ```powershell
 py -3 harness.py recipe ltspice open_schematic --params path=C:/circuits/amp.asc
+
+# Add --record to compile an animated GIF visual proof of execution:
+py -3 harness.py recipe ltspice run_simulation --record
 ```
 
 ---

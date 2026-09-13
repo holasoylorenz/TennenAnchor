@@ -157,8 +157,9 @@ def cmd_recipe(args: argparse.Namespace) -> None:
                 k, v = item.split("=", 1)
                 params[k.strip()] = v.strip()
 
+    record_flag = getattr(args, "record", False)
     runner = PlaybookRunner(registry=registry)
-    res = runner.execute(profile=profile, recipe_id=args.recipe, params=params)
+    res = runner.execute(profile=profile, recipe_id=args.recipe, params=params, record=record_flag)
 
     print(f"\n--- Recipe Execution Result: {args.recipe} ---")
     print(f"Status          : {res.get('status').upper()}")
@@ -168,6 +169,8 @@ def cmd_recipe(args: argparse.Namespace) -> None:
     print(f"Final State     : {res.get('final_state')}")
     if res.get("pinned_hwnd"):
         print(f"Pinned HWND     : {res.get('pinned_hwnd')}")
+    if res.get("recording_path"):
+        print(f"Visual Proof    : {res.get('recording_path')}")
     if res.get("artifacts"):
         print(f"Artifacts       : {json.dumps(res.get('artifacts'), indent=2)}")
     if res.get("error"):
@@ -256,6 +259,7 @@ def main() -> None:
     p_recipe.add_argument("app", type=str, help="Application ID (e.g. ltspice)")
     p_recipe.add_argument("recipe", type=str, help="Recipe ID (e.g. run_simulation)")
     p_recipe.add_argument("--params", "-p", nargs="*", help="Key=value parameters (e.g. path=file.asc)")
+    p_recipe.add_argument("--record", "-r", action="store_true", help="Record window-scoped animated GIF visual proof")
 
     # Launch (Lifecycle Broker)
     p_launch = subparsers.add_parser("launch", help="Ensure app is running and focused via Shell COM Broker")

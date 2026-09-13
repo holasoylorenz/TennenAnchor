@@ -26,9 +26,9 @@ py -3 harness.py launch ltspice
 py -3 harness.py ast
 py -3 harness.py ast --app ltspice
 
-# 5. Execute an App-AST verified recipe
+# 5. Execute an App-AST verified recipe (add --record for GIF visual proof)
 py -3 harness.py recipe ltspice open_schematic --params path=C:/path/circuit.asc
-py -3 harness.py recipe ltspice run_simulation
+py -3 harness.py recipe ltspice run_simulation --record
 
 # 6. Check buffer synchronization (disk vs GUI memory)
 py -3 harness.py sync outputs/miller_ota.asc --app ltspice
@@ -89,7 +89,7 @@ It communicates over **stdio JSON-RPC 2.0** with strict stream isolation:
 | `desktop_act` | Unified actuation (mouse clicks, typing, hotkeys). Target by `#ID` or coordinates. | `action` (`click`, `double_click`, `right_click`, `type`, `hotkey`, `press_key`), `element_id`, `coordinates`, `text`, `keys`, `key` |
 | `desktop_step` | **Composite Power Tool**: Acts + waits 250ms UI settle + re-inspects in 1 turn (cuts tokens 50%). | Same as `desktop_act` plus `wait_ms` (default 250) |
 | `app_query` | Introspects registered App-AST profiles, states, recipes, domain hints, and friction ledger. | `app` (optional string, e.g. `'ltspice'`, omit for list) |
-| `app_execute_recipe`| Executes multi-step App-AST macro with HWND pinning, focus protection, and dual-channel verification. | `app` (string), `recipe` (string), `params` (object) |
+| `app_execute_recipe`| Executes multi-step App-AST macro with HWND pinning, focus protection, dual verification, and optional GIF recording. | `app` (string), `recipe` (string), `params` (object), `record` (optional bool) |
 | `app_record_struggle`| Logs operational quirks, state mismatches, or UI failures into persistent ledger. | `app`, `action`, `symptom`, `resolution`, `refinement`, `category`, `severity` |
 
 ---

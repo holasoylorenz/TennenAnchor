@@ -63,10 +63,12 @@ class PlaybookRunner:
         recipe_id: str,
         params: Optional[Dict[str, Any]] = None,
         hwnd: Optional[int] = None,
+        record: bool = False,
     ) -> Dict[str, Any]:
         """
         Executes a recipe step-by-step as a pinned transaction.
         Returns execution summary dict with status, step counts, final state, and extracted artifacts.
+        Optionally records window-scoped animated GIF visual proof if record=True.
         """
         params = params or {}
         recipe = profile.recipes.get(recipe_id)
@@ -93,12 +95,22 @@ class PlaybookRunner:
         if pinned_hwnd:
             self.controller.force_focus_window(pinned_hwnd)
 
+        # Optional Session Recorder for Visual Proof
+        recorder = None
+        if record:
+            from core.recorder import WindowScopedRecorder
+            recorder = WindowScopedRecorder(hwnd=pinned_hwnd)
+            recorder.start()
+            recorder.set_status(f"Starting {recipe_id}")
+
         # 2. Buffer Synchronization (Disk vs GUI Working Buffer)
         doc_path = params.get("path") or params.get("file")
         if doc_path:
             plan = self.buffer_sync.plan_reload_strategy(pinned_hwnd, doc_path, profile.app_id)
             if plan.get("strategy") == "discard_buffer_then_open" and plan.get("requires_close_hotkey"):
                 logger.info("BufferSyncManager: Discarding active in-memory buffer via %s prior to reload", plan["requires_close_hotkey"])
+                if recorder:
+                    recorder.set_status("BufferSync: Discarding stale in-memory tab")
                 self.controller.hotkey(plan["requires_close_hotkey"])
                 time.sleep(0.3)
 
@@ -113,6 +125,9 @@ class PlaybookRunner:
         total_steps = len(recipe.steps)
 
         for idx, step in enumerate(recipe.steps, 1):
+            if recorder:
+                recorder.set_status(f"Step {idx}/{total_steps}: {step.action}")
+
             # Focus Invariant Guard: re-assert focus if background events caused drift
             if pinned_hwnd:
                 fg = user32.GetForegroundWindow()
@@ -134,6 +149,8 @@ class PlaybookRunner:
                     try:
                         if self._attempt_recovery_from_ledger(step, e, profile, pinned_hwnd):
                             logger.info("Retrying step %d/%d after applying ledger recovery...", idx, total_steps)
+                            if recorder:
+                                recorder.set_status(f"Self-Healing: applying ledger recovery for step {idx}")
                             self._execute_step(step, params, profile, pinned_hwnd)
                             recovered = True
                             steps_done += 1
@@ -146,6 +163,10 @@ class PlaybookRunner:
                     err_msg = f"Step {idx}/{total_steps} ({step.action}) failed: {e}"
                     logger.error("Playbook execution error in %s: %s", recipe_id, err_msg)
 
+                    if recorder:
+                        recorder.set_status(f"Failed at step {idx}: {step.action}")
+                        rec_path = recorder.stop(filename_prefix=f"{profile.app_id}_{recipe_id}_failed")
+
                     # Automatic friction telemetry capture
                     self.tracker.record(
                         app=profile.app_id,
@@ -155,7 +176,7 @@ class PlaybookRunner:
                         severity="high",
                     )
 
-                    return {
+                    err_payload = {
                         "status": "error",
                         "recipe": recipe_id,
                         "steps_completed": steps_done,
@@ -164,6 +185,9 @@ class PlaybookRunner:
                         "initial_state": initial_state,
                         "pinned_hwnd": pinned_hwnd,
                     }
+                    if recorder and rec_path:
+                        err_payload["recording_path"] = str(rec_path)
+                    return err_payload
 
         # Record loaded document in buffer sync manager
         if doc_path:
@@ -190,6 +214,14 @@ class PlaybookRunner:
             "pinned_hwnd": pinned_hwnd,
             "window": post_res.get("window"),
         }
+
+        # Finalize Session Recording if enabled
+        if recorder:
+            recorder.set_status(f"Verified: {final_state} ({dt_ms:.0f}ms)")
+            time.sleep(0.3)
+            rec_path = recorder.stop(filename_prefix=f"{profile.app_id}_{recipe_id}")
+            if rec_path:
+                result_payload["recording_path"] = str(rec_path)
 
         # Dual-Channel Artifact Extraction (Channel B)
         artifact_spec = getattr(recipe, "artifact_postconditions", None)

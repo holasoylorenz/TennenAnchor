@@ -1,19 +1,22 @@
 # desktop-control-harness
 
-Deterministic Windows desktop automation harness, Application State Tree (App-AST) engine, and operational friction telemetry for autonomous agents.
+A stateful execution and verification runtime for AI computer-use agents on Windows.
 
 ---
 
 ## Overview
 
-Computer-use agents on Windows encounter four recurring failure modes:
+Most computer-use systems treat desktop control as an open-loop sequence of raw perception and mouse clicks:
 
-1. **Context Bloat**: Serializing raw UI Automation trees or full-resolution screenshots consumes 3,000–5,000 tokens per turn, blowing context windows in 10–15 steps.
-2. **Display & DPI Misalignment**: Display scaling (125%, 150%) and multi-monitor configurations create coordinate drift between screen capture, bounding boxes, and OS input events.
-3. **Canvas Blindness**: Custom-rendered GUIs (DirectX, GDI, Electron canvas) lack accessibility DOMs, causing pure UIA crawlers to stall.
-4. **Zero-Knowledge Amnesia**: Agents re-discover application-specific quirks (e.g. `os.startfile` failing to route into an active instance, CLI batch mode timeouts, COM modal rejections) from scratch on every run.
+$$\text{Agent} \longrightarrow \text{Screenshot} \longrightarrow \text{Vision/Reasoning} \longrightarrow \text{Raw Click} \longrightarrow \text{Screenshot} \longrightarrow \dots$$
 
-`desktop-control-harness` addresses these challenges with a dual-tier perception pipeline, a persistent state-action tree (App-AST), and a runtime friction ledger.
+In native Windows environments with complex desktop software, this pattern breaks down quickly:
+1. **Context Bloat**: Serializing raw UI Automation trees or full screenshots consumes 3,000–5,000 tokens per turn, exhausting agent context in 10–15 steps.
+2. **Display & Coordinate Drift**: Per-Monitor DPI scaling (125%, 150%) and multi-monitor setups cause severe drift between screenshot pixels and OS mouse events.
+3. **Canvas Blindness**: Custom-rendered GUIs (EDA tools, DirectX, Electron canvas) lack accessibility DOMs, causing pure UIA crawlers to stall.
+4. **Lack of Invariants & Verification**: Blind coordinate clicks have no semantic security boundary, no preconditions, and no deterministic verification of state transitions.
+
+`desktop-control-harness` shifts the paradigm from **"click coordinate and hope"** to **"observe state $\to$ execute verified transition $\to$ verify postcondition"**, combining an in-process UIA crawler with visual escalation fallback, an Application State Tree (App-AST) intermediate representation, and an operational friction ledger.
 
 ---
 
@@ -121,28 +124,34 @@ Complex native desktop software (CAD/EDA/simulation tools) exposes the limits of
 `desktop-control-harness` executes the complete engineering workflow:
 
 ```
-[Agent Goal] "Design a 10x Op-Amp amplifier in LTspice, simulate 3ms transient, and plot Vout and Vin."
+[Agent Goal] "Simulate amplifier circuit, plot waveforms, and measure -3dB bandwidth."
      │
      ├── 1. Generates netlist / schematic: outputs/amplifier.asc (Version 4, SHEET, WIRE, SYMBOL)
      ├── 2. Invokes App-AST Recipe: open_schematic(path="outputs/amplifier.asc")
      │      └─ In-app Ctrl+O sequence bypassing OS shell routing (discovered via friction ledger)
      ├── 3. Invokes App-AST Recipe: run_simulation()
      │      └─ Clicks Run/Pause (#7) and verifies transition to waveform_active state
-     └── 4. Invokes App-AST Recipe: open_trace_picker() + Selects V(out), V(in)
-            └─ Renders dual waveforms in 2 turns instead of 15 manual steps
+     ├── 4. Invokes App-AST Recipe: open_trace_picker() + Selects V(out), V(in)
+     │      └─ Renders dual waveforms in 2 turns instead of 15 manual steps
+     └── 5. Verifies Output & Measurement: f_-3dB = 1.73 MHz
 ```
 
 ---
 
-## Action Risk & Safety Hierarchy
+## Action Risk & Semantic Security Boundary
 
-To safeguard host environments, every desktop action is classified prior to execution:
+Generic desktop MCP servers expose unrestricted raw mouse and keyboard primitives (`mouse_click`, `type_text`, `press_key`), which effectively cede unconstrained control of the host machine to the caller.
+
+`desktop-control-harness` elevates the **semantic action itself** to the security boundary. By invoking verified App-AST recipes (`app_execute_recipe`) instead of raw pixel clicks:
+* **Preconditions & Postconditions**: The runtime asserts application state predicates before and after transitions.
+* **Process Tree Isolation**: Actions are bound strictly to target application HWNDs, preventing coordinate clicks from slipping onto background windows or the host agent terminal.
+* **4-Tier Classification**: Every action is classified and checked prior to dispatch:
 
 | Risk Level | Actions | Side-Effect Profile | Enforcement Policy |
 | :--- | :--- | :--- | :--- |
 | **`READ`** | `inspect`, `screenshot`, `query`, `ast`, `struggles` | Zero side-effects. Safe to run unconditionally. | Automatically permitted |
 | **`LOW_RISK_WRITE`** | `click`, `move`, `scroll`, `type`, `press_key` | Standard UI interactions within foreground window. | Permitted with bounds checking |
-| **`HIGH_RISK_WRITE`** | `hotkey`, `close`, `drag`, `execute`, `recipe` | State-modifying, file-altering, or composite procedures. | Logged & pre-validated |
+| **`HIGH_RISK_WRITE`** | `hotkey`, `close`, `drag`, `execute`, `recipe` | State-modifying, file-altering, or composite procedures. | Pre-validated against AST invariants |
 | **`CRITICAL_BLOCKED`** | Host terminal closure, `Alt+F4` on agent process, `Ctrl+Alt+Del` | Fatal disruption or host agent termination. | **Hard blocked by process tree guard** |
 
 

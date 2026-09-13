@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "desktop-control-harness"
 version = "1.1.0"
-description = "High-performance Windows desktop automation harness, App-AST state engine, and struggle telemetry for autonomous AI agents."
+description = "Stateful execution and verification runtime for Windows desktop computer-use agents."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [

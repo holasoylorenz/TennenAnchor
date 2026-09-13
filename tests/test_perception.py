@@ -51,3 +51,26 @@ def test_screenshot_escalator_capture():
     assert res["scaled_size"][0] <= 1280
     assert res["scaled_size"][1] <= 1280
     assert len(res["base64_image"]) > 100
+    # Clean up after test
+    ScreenshotEscalator.cleanup_old_screenshots(max_keep=0)
+
+
+def test_screenshot_cleanup():
+    """Verifies that cleanup_old_screenshots correctly prunes files above threshold."""
+    import time
+    from perception.screenshot_escalator import OUTPUT_DIR
+
+    ScreenshotEscalator.cleanup_old_screenshots(max_keep=0)
+    for i in range(7):
+        dummy = OUTPUT_DIR / f"dummy_{i}.png"
+        dummy.write_text("test")
+        time.sleep(0.01)
+
+    assert len(list(OUTPUT_DIR.glob("*.png"))) == 7
+    deleted = ScreenshotEscalator.cleanup_old_screenshots(max_keep=3)
+    assert deleted == 4
+    assert len(list(OUTPUT_DIR.glob("*.png"))) == 3
+
+    # Clean up completely
+    ScreenshotEscalator.cleanup_old_screenshots(max_keep=0)
+    assert len(list(OUTPUT_DIR.glob("*.png"))) == 0

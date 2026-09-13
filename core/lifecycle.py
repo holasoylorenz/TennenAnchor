@@ -48,30 +48,35 @@ class AppLifecycleBroker:
         app_name_lower = profile.name.lower()
         app_id_lower = profile.app_id.lower()
 
-        found_hwnd: Optional[int] = None
+        user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+        user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+        user32.GetWindowTextLengthW.argtypes = [wintypes.HWND]
+        user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+        user32.IsWindowVisible.argtypes = [wintypes.HWND]
+
+        candidates_by_title: List[int] = []
+        candidates_by_proc: List[int] = []
 
         def callback(hwnd: int, lparam: int) -> bool:
-            nonlocal found_hwnd
-            if found_hwnd:
+            if not user32.IsWindowVisible(hwnd):
                 return True
 
-            if not user32.IsWindowVisible(hwnd):
+            rect = wintypes.RECT()
+            user32.GetWindowRect(hwnd, ctypes.byref(rect))
+            if (rect.right - rect.left) <= 100 or (rect.bottom - rect.top) <= 100:
                 return True
 
             # Check window title
             length = user32.GetWindowTextLengthW(hwnd)
+            title = ""
             if length > 0:
                 buf = ctypes.create_unicode_buffer(length + 1)
                 user32.GetWindowTextW(hwnd, buf, length + 1)
                 title = buf.value.lower()
 
-                if app_name_lower in title or app_id_lower in title:
-                    # Verify window is not zero-sized
-                    rect = wintypes.RECT()
-                    user32.GetWindowRect(hwnd, ctypes.byref(rect))
-                    if (rect.right - rect.left) > 100 and (rect.bottom - rect.top) > 100:
-                        found_hwnd = hwnd
-                        return True
+            if app_name_lower in title or app_id_lower in title:
+                candidates_by_title.append(hwnd)
+                return True
 
             # Check owning process name
             pid = wintypes.DWORD()
@@ -80,18 +85,18 @@ class AppLifecycleBroker:
                 try:
                     pname = psutil.Process(pid.value).name().lower()
                     if any(pat in pname for pat in patterns):
-                        rect = wintypes.RECT()
-                        user32.GetWindowRect(hwnd, ctypes.byref(rect))
-                        if (rect.right - rect.left) > 100 and (rect.bottom - rect.top) > 100:
-                            found_hwnd = hwnd
-                            return True
+                        candidates_by_proc.append(hwnd)
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     pass
 
             return True
 
         user32.EnumWindows(WNDENUMPROC(callback), 0)
-        return found_hwnd
+        if candidates_by_title:
+            return candidates_by_title[0]
+        if candidates_by_proc:
+            return candidates_by_proc[0]
+        return None
 
     def resolve_executable_path(self, profile: AppProfile) -> Optional[Path]:
         """Resolves local absolute path to application executable."""

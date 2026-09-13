@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated_at": "2026-09-13T18:41:28.408459+00:00",
+  "updated_at": "2026-09-13T19:33:02.462250+00:00",
   "events": [
     {
       "id": "fric_ltspice_001",
@@ -56,11 +56,11 @@
       "action": "recipe:run_simulation:step_1:click_control",
       "category": "EXECUTION_ERROR",
       "symptom": "Target control 'Run/Pause' not found in active window.",
-      "timestamp": "2026-09-13T18:41:28.408456+00:00",
+      "timestamp": "2026-09-13T19:33:02.462247+00:00",
       "severity": "high",
       "resolution": null,
       "refinement": null,
-      "occurrences": 2
+      "occurrences": 4
     }
   ]
 }

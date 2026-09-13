@@ -10,6 +10,7 @@ htmlcov/
 
 # Local outputs & binary screen captures
 outputs/screenshots/
+outputs/recordings/
 outputs/*.raw
 outputs/*.log
 outputs/*.net
@@ -25,6 +26,9 @@ outputs/*.op.raw
 *.webp
 *.bmp
 *.gif
+!assets/*.gif
+!assets/*.png
+!assets/*.svg
 *.docx
 *.doc
 *.xlsx

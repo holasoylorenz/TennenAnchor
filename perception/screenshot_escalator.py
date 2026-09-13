@@ -21,11 +21,30 @@ OUTPUT_DIR = Path(__file__).resolve().parent.parent / "outputs" / "screenshots"
 class ScreenshotEscalator:
     """Captures and optimizes screenshots for Tier 2 multimodal AI vision."""
 
-    def __init__(self, max_dimension: int = 1280, quality: int = 80):
+    def __init__(self, max_dimension: int = 1280, quality: int = 80, max_retained: int = 5):
         self.max_dimension = max_dimension
         self.quality = quality
+        self.max_retained = max_retained
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         init_dpi_awareness()
+
+    @staticmethod
+    def cleanup_old_screenshots(max_keep: int = 5) -> int:
+        """Prunes older screenshots from output directory, keeping the newest max_keep files."""
+        deleted = 0
+        try:
+            pngs = sorted(OUTPUT_DIR.glob("*.png"), key=lambda p: p.stat().st_mtime)
+            to_delete = len(pngs) - max_keep
+            if to_delete > 0:
+                for old_file in pngs[:to_delete]:
+                    try:
+                        old_file.unlink()
+                        deleted += 1
+                    except OSError:
+                        pass
+        except Exception:
+            pass
+        return deleted
 
     def capture(self, target: str = "active_window", hwnd: Optional[int] = None) -> Dict[str, Any]:
         """
@@ -107,6 +126,9 @@ class ScreenshotEscalator:
 
         # Save with quality optimization
         img.save(filepath, format="PNG", optimize=True)
+
+        # Automatically prune older screenshots to prevent disk accumulation
+        self.cleanup_old_screenshots(self.max_retained)
 
         # Generate base64
         with open(filepath, "rb") as f:

@@ -1,0 +1,67 @@
+{
+  "app_id": "winword",
+  "name": "Microsoft Word",
+  "executable_patterns": ["winword.exe"],
+  "window_classes": ["OpusApp"],
+  "domain_hints": {
+    "file_extensions": [".docx", ".doc", ".rtf", ".pdf"],
+    "com_progid": "Word.Application",
+    "quirks": {
+      "com_modal_rejection": "Word COM API rejects calls (-2147418111) if a modal dialog or cell edit is active. Check modal state or save via python-docx / standard SaveAs before opening interactively."
+    }
+  },
+  "states": {
+    "document_active": {
+      "state_id": "document_active",
+      "name": "Document Editing Active",
+      "description": "Word is active with an open document ready for text editing or formatting.",
+      "predicate": {
+        "title_contains": "Word",
+        "min_controls": 3
+      },
+      "available_recipes": ["save_document", "new_blank_document"]
+    },
+    "save_dialog": {
+      "state_id": "save_dialog",
+      "name": "Save As Dialog Active",
+      "description": "Modal Save As dialog awaiting path input.",
+      "predicate": {
+        "title_contains": "Save",
+        "has_controls": ["Save", "Cancel"]
+      },
+      "available_recipes": []
+    }
+  },
+  "recipes": {
+    "save_document": {
+      "recipe_id": "save_document",
+      "name": "Save Active Document",
+      "description": "Sends Ctrl+S to save the currently focused document.",
+      "parameters": [],
+      "initial_state": "document_active",
+      "expected_final_state": "document_active",
+      "steps": [
+        {
+          "action": "hotkey",
+          "keys": ["ctrl", "s"],
+          "wait_ms": 500
+        }
+      ]
+    },
+    "new_blank_document": {
+      "recipe_id": "new_blank_document",
+      "name": "Create New Document",
+      "description": "Creates a new blank document using Ctrl+N.",
+      "parameters": [],
+      "initial_state": "document_active",
+      "expected_final_state": "document_active",
+      "steps": [
+        {
+          "action": "hotkey",
+          "keys": ["ctrl", "n"],
+          "wait_ms": 600
+        }
+      ]
+    }
+  }
+}

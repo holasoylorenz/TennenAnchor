@@ -1,0 +1,117 @@
+{
+  "app_id": "ltspice",
+  "name": "LTspice",
+  "executable_patterns": ["ltspice.exe"],
+  "window_classes": ["LTspice"],
+  "domain_hints": {
+    "file_extensions": [".asc", ".raw", ".plt", ".net", ".cir", ".log"],
+    "asc_format_version": 4,
+    "key_symbols": {
+      "resistor": "res",
+      "capacitor": "cap",
+      "voltage_source": "voltage",
+      "opamp": "UniversalOpAmp2",
+      "npn": "npn"
+    },
+    "simulation_directives": [".tran", ".ac", ".dc", ".op"],
+    "quirks": {
+      "shell_open_ignored": "When LTspice is already running, os.startfile does not load documents into the active instance. Use Ctrl+O dialog recipe.",
+      "batch_cli_unreliable": "Avoid running LTspice.exe in batch mode (-b) without active graphical context as it may block indefinitely."
+    }
+  },
+  "states": {
+    "empty_workspace": {
+      "state_id": "empty_workspace",
+      "name": "Empty Workspace",
+      "description": "LTspice is open with no schematic or waveform active.",
+      "predicate": {
+        "title_contains": "LTspice",
+        "has_controls": ["New Schematic", "Open"]
+      },
+      "available_recipes": ["open_schematic"]
+    },
+    "schematic_open": {
+      "state_id": "schematic_open",
+      "name": "Schematic Active",
+      "description": "An .asc schematic file is loaded in the workspace ready for editing or simulation.",
+      "predicate": {
+        "title_contains": ".asc",
+        "has_controls": ["Run/Pause", "Wire", "Resistor"]
+      },
+      "available_recipes": ["run_simulation"]
+    },
+    "waveform_active": {
+      "state_id": "waveform_active",
+      "name": "Waveform Viewer Active",
+      "description": "Simulation has executed and the .raw waveform viewer pane is open.",
+      "predicate": {
+        "title_contains": "LTspice",
+        "has_controls": ["Pick Visible Traces", "Zoom to rectangle"]
+      },
+      "available_recipes": ["open_trace_picker"]
+    },
+    "trace_picker_dialog": {
+      "state_id": "trace_picker_dialog",
+      "name": "Select Visible Waveforms Dialog",
+      "description": "Modal dialog displaying list of available net voltages and currents to plot.",
+      "predicate": {
+        "title_contains": "Select Visible Waveforms",
+        "has_controls": ["OK", "Cancel"]
+      },
+      "available_recipes": []
+    }
+  },
+  "recipes": {
+    "open_schematic": {
+      "recipe_id": "open_schematic",
+      "name": "Open Schematic",
+      "description": "Reliably opens a schematic file using in-app hotkey Ctrl+O, typing the path, and pressing Enter.",
+      "parameters": ["path"],
+      "initial_state": "empty_workspace",
+      "expected_final_state": "schematic_open",
+      "steps": [
+        {
+          "action": "hotkey",
+          "keys": ["ctrl", "o"],
+          "wait_ms": 600
+        },
+        {
+          "action": "type_text",
+          "text": "{path}",
+          "press_enter": true,
+          "wait_ms": 1000
+        }
+      ]
+    },
+    "run_simulation": {
+      "recipe_id": "run_simulation",
+      "name": "Run Simulation",
+      "description": "Triggers simulation of the active schematic via the Run toolbar button.",
+      "parameters": [],
+      "initial_state": "schematic_open",
+      "expected_final_state": "waveform_active",
+      "steps": [
+        {
+          "action": "click_control",
+          "target": "Run/Pause",
+          "wait_ms": 1500
+        }
+      ]
+    },
+    "open_trace_picker": {
+      "recipe_id": "open_trace_picker",
+      "name": "Open Trace Picker",
+      "description": "Opens the 'Select Visible Waveforms' modal dialog from the waveform viewer.",
+      "parameters": [],
+      "initial_state": "waveform_active",
+      "expected_final_state": "trace_picker_dialog",
+      "steps": [
+        {
+          "action": "click_control",
+          "target": "Pick Visible Traces",
+          "wait_ms": 600
+        }
+      ]
+    }
+  }
+}

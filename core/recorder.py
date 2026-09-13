@@ -100,6 +100,7 @@ class WindowScopedRecorder:
 
     def _capture_worker(self) -> None:
         """Background thread that captures window frames at the specified FPS."""
+        ensure_interactive_desktop()
         try:
             import mss
         except ImportError:
@@ -108,24 +109,28 @@ class WindowScopedRecorder:
 
         interval = 1.0 / self.fps
 
-        with mss.mss() as sct:
-            while not self._stop_event.is_set():
-                t0 = time.perf_counter()
+        try:
+            sct_cls = getattr(mss, "MSS", mss.mss)
+            with sct_cls() as sct:
+                while not self._stop_event.is_set():
+                    t0 = time.perf_counter()
 
-                bbox = self._get_target_bbox()
-                if bbox:
-                    try:
-                        sct_img = sct.grab(bbox)
-                        img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-                        current_st = self.get_status()
-                        self._raw_frames.append((img, current_st))
-                    except Exception as grab_err:
-                        logger.debug("Frame grab transient error: %s", grab_err)
+                    bbox = self._get_target_bbox()
+                    if bbox:
+                        try:
+                            sct_img = sct.grab(bbox)
+                            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                            current_st = self.get_status()
+                            self._raw_frames.append((img, current_st))
+                        except Exception as grab_err:
+                            logger.debug("Frame grab transient error: %s", grab_err)
 
-                dt = time.perf_counter() - t0
-                sleep_time = interval - dt
-                if sleep_time > 0:
-                    time.sleep(sleep_time)
+                    dt = time.perf_counter() - t0
+                    sleep_time = interval - dt
+                    if sleep_time > 0:
+                        time.sleep(sleep_time)
+        except Exception as sct_err:
+            logger.warning("Session recorder capture worker stopped: %s", sct_err)
 
     def stop(self, filename_prefix: str = "session") -> Optional[Path]:
         """

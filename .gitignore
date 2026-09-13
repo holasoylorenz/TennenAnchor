@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest & test cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local outputs & binary screen captures
+outputs/screenshots/*.png
+outputs/*.raw
+outputs/*.log
+!outputs/.gitkeep
+
+# Environments & packages
+.venv/
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# IDEs & editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary & system files
+*.tmp
+Thumbs.db
+Desktop.ini

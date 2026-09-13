@@ -26,20 +26,55 @@ class DesktopController:
         except ImportError:
             pass
 
-    def force_focus_window(self, hwnd: int) -> bool:
-        """
-        Guarantees that a window is brought to foreground and receives keyboard focus.
-        Bypasses Windows LockSetForegroundWindow restriction using input thread attachment.
-        """
-        if not hwnd or hwnd <= 0:
+    @staticmethod
+    def is_window_or_descendant(fg: int, target_hwnd: int) -> bool:
+        """Returns True if fg is target_hwnd or an owned/child dialog or same process."""
+        if not fg or not target_hwnd:
             return False
+        if fg == target_hwnd:
+            return True
+
+        import ctypes
+        from ctypes import wintypes
+        user32 = ctypes.windll.user32
+
+        # Check owner / parent chain
+        curr = fg
+        for _ in range(5):
+            owner = user32.GetWindow(curr, 4)  # GW_OWNER
+            parent = user32.GetParent(curr)
+            if owner == target_hwnd or parent == target_hwnd:
+                return True
+            curr = owner or parent
+            if not curr:
+                break
+
+        # Check process ID
+        pid_fg = wintypes.DWORD()
+        pid_target = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(fg, ctypes.byref(pid_fg))
+        user32.GetWindowThreadProcessId(target_hwnd, ctypes.byref(pid_target))
+        if pid_fg.value > 0 and pid_fg.value == pid_target.value:
+            return True
+
+        return False
+
+    def force_focus_window(self, hwnd: int, allow_descendant: bool = False) -> bool:
+        """
+        Robust Win32 foreground attachment.
+        Attaches thread input queues, un-minimizes window, and asserts focus.
+        If allow_descendant is True, already focused modal dialogs belonging to hwnd are preserved.
+        """
         try:
             import win32gui
             import win32process
             import win32api
             import win32con
 
-            if win32gui.GetForegroundWindow() == hwnd:
+            fg = win32gui.GetForegroundWindow()
+            if fg == hwnd:
+                return True
+            if allow_descendant and self.is_window_or_descendant(fg, hwnd):
                 return True
 
             cur_tid = win32api.GetCurrentThreadId()
@@ -148,7 +183,7 @@ class DesktopController:
         import pyautogui
 
         if target_hwnd:
-            self.force_focus_window(target_hwnd)
+            self.force_focus_window(target_hwnd, allow_descendant=True)
 
         try:
             pyautogui.typewrite(text, interval=0.015)
@@ -177,7 +212,7 @@ class DesktopController:
             return {"status": "error", "error": reason}
 
         if target_hwnd:
-            self.force_focus_window(target_hwnd)
+            self.force_focus_window(target_hwnd, allow_descendant=True)
 
         normalized = [k.strip().lower() for k in keys]
         try:

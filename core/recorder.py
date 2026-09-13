@@ -201,7 +201,8 @@ class WindowScopedRecorder:
             append_images=processed[1:],
             duration=frame_duration,
             loop=0,
-            optimize=True,
+            disposal=2,
+            optimize=False,
         )
 
         dt_proc = (time.perf_counter() - t0) * 1000.0

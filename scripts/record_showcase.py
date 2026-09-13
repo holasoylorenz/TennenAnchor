@@ -56,6 +56,11 @@ def record_showcase(
     logger.info("Attached to LTspice (HWND: %s)", hwnd)
     time.sleep(0.5)
 
+    # Ensure clean starting state: close any currently open tabs
+    broker.controller.force_focus_window(hwnd)
+    broker.controller.hotkey(["ctrl", "w"])
+    time.sleep(0.6)
+
     # 3. Start Window-Scoped Recorder pinned strictly to LTspice HWND
     recorder = WindowScopedRecorder(
         hwnd=hwnd,
@@ -64,24 +69,25 @@ def record_showcase(
         output_dir=output_path.parent,
     )
     recorder.start()
-    recorder.set_status("Harness 2.0 | Pinned HWND: " + str(hwnd))
-    time.sleep(0.6)
+    recorder.set_status(f"Connecting: Pinned HWND {hwnd}")
+    time.sleep(0.8)
 
     try:
         runner = PlaybookRunner(registry=registry)
 
-        # Step A: Discard & Open Schematic (use relative path to preserve privacy)
-        rel_asc_path = str(asc_path.relative_to(HARNESS_ROOT))
-        recorder.set_status("Harness 2.0 | Recipe: open_schematic")
-        res_open = runner.execute(profile, "open_schematic", params={"path": rel_asc_path}, record=False)
+        # Step A: Open Schematic
+        recorder.set_status(f"Recipe: open_schematic -> {asc_path.name}")
+        res_open = runner.execute(profile, "open_schematic", params={"path": str(asc_path.resolve())}, record=False)
         logger.info("open_schematic completed: %s", res_open.get("status"))
-        time.sleep(0.8)
+        # Allow frames to clearly capture the loaded schematic
+        time.sleep(1.8)
 
         # Step B: Run Simulation
-        recorder.set_status("Harness 2.0 | Recipe: run_simulation")
+        recorder.set_status("Recipe: run_simulation (AC analysis)")
         res_sim = runner.execute(profile, "run_simulation", record=False)
         logger.info("run_simulation completed: %s", res_sim.get("status"))
-        time.sleep(1.2)
+        # Allow frames to capture waveform viewer pane and simulation settling
+        time.sleep(2.5)
 
         # Step C: Dual-Channel Verification (Extract metrics from log)
         meas = parse_ota_log(log_path)
@@ -89,8 +95,9 @@ def record_showcase(
         gbw = meas.get("gbw_mhz", "N/A")
         verified_msg = f"Dual-Channel Verified: A0={a0}dB, GBW={gbw}MHz"
         logger.info(verified_msg)
-        recorder.set_status(f"Harness 2.0 | {verified_msg}")
-        time.sleep(1.2)
+        recorder.set_status(verified_msg)
+        # Settle on final verified state so viewer can inspect
+        time.sleep(2.5)
 
     finally:
         logger.info("Finalizing recording and compiling animated GIF...")

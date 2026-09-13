@@ -131,7 +131,7 @@ class PlaybookRunner:
             # Focus Invariant Guard: re-assert focus if background events caused drift
             if pinned_hwnd:
                 fg = user32.GetForegroundWindow()
-                if fg != pinned_hwnd:
+                if fg != pinned_hwnd and not self.controller.is_window_or_descendant(fg, pinned_hwnd):
                     logger.debug("Focus drift detected (FG: %s != Target: %s). Re-asserting focus...", fg, pinned_hwnd)
                     self.controller.force_focus_window(pinned_hwnd)
                     time.sleep(0.08)

@@ -6,7 +6,7 @@ Prevents suicide clicks on the AGY CLI window, catches fail-safe triggers, and d
 import os
 import sys
 import logging
-from typing import Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 import psutil
 
 logger = logging.getLogger("desktop_harness.safety")
@@ -44,6 +44,44 @@ def is_window_protected(hwnd: int) -> bool:
     except Exception:
         pass
     return False
+
+
+class ActionRiskLevel:
+    READ = "READ"                          # Zero side-effects (inspect, query, screenshot)
+    LOW_RISK_WRITE = "LOW_RISK_WRITE"      # Reversible input (type, click, scroll)
+    HIGH_RISK_WRITE = "HIGH_RISK_WRITE"    # State-modifying / file-altering (hotkey, close, execute)
+    CRITICAL_BLOCKED = "CRITICAL_BLOCKED"  # OS-level violation or agent suicide
+
+
+def classify_action_risk(
+    action_name: str,
+    hwnd: Optional[int] = None,
+    keys: Optional[list] = None,
+) -> Dict[str, Any]:
+    """
+    Classifies the operational risk of a planned desktop action.
+    Returns dict with risk level ('READ', 'LOW_RISK_WRITE', 'HIGH_RISK_WRITE', 'CRITICAL_BLOCKED')
+    and validation status.
+    """
+    safe, reason = validate_target_action(hwnd, action_name, keys)
+    if not safe:
+        return {
+            "risk": ActionRiskLevel.CRITICAL_BLOCKED,
+            "allowed": False,
+            "reason": reason,
+        }
+
+    act = action_name.lower().strip()
+    if act in ("inspect", "screenshot", "query", "ast", "struggles", "read"):
+        return {"risk": ActionRiskLevel.READ, "allowed": True, "reason": "Read-only inspection"}
+
+    if act in ("move", "scroll", "click", "double_click", "right_click", "type", "press_key"):
+        return {"risk": ActionRiskLevel.LOW_RISK_WRITE, "allowed": True, "reason": "Standard UI interaction"}
+
+    if act in ("hotkey", "close", "drag", "recipe", "execute", "terminate"):
+        return {"risk": ActionRiskLevel.HIGH_RISK_WRITE, "allowed": True, "reason": "State-modifying action"}
+
+    return {"risk": ActionRiskLevel.LOW_RISK_WRITE, "allowed": True, "reason": "Unclassified action default"}
 
 
 def validate_target_action(hwnd: Optional[int], action_name: str, keys: Optional[list] = None) -> Tuple[bool, str]:

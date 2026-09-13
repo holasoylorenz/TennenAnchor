@@ -12,8 +12,11 @@ htmlcov/
 outputs/screenshots/
 outputs/*.raw
 outputs/*.log
+outputs/*.net
+outputs/*.db
+outputs/*.op.raw
 !outputs/.gitkeep
-!outputs/amplifier.asc
+!outputs/*.asc
 
 # Privacy & document protection (never commit user documents or screenshots)
 *.png

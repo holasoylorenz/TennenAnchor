@@ -9,6 +9,9 @@ Operational runtime guidance for AI computer-use agents (Claude Code, Antigravit
 All commands assume Windows 10/11 with Python 3.10+ and Per-Monitor v2 DPI awareness.
 
 ```powershell
+# 0. One-time setup (install dependencies in editable mode)
+py -3 -m pip install -e .
+
 # 1. Run unit test suite (fast verification, 38 tests, ~5s)
 py -3 -m pytest
 
@@ -39,8 +42,27 @@ py -3 harness.py benchmark --samples 10 --no-save
 
 ---
 
-## 2. MCP Server Configuration & Protocol
+## 2. MCP Server Configuration & CLI-to-MCP Translation
 
+### Execution Context Guidance
+- **Terminal/Shell-Based Agents (Claude Code, Antigravity bash/powershell)**: Execute operations directly via `py -3 harness.py <command>`.
+- **Connected MCP Agents (Cursor, Claude Desktop, Antigravity MCP)**: Invoke the corresponding MCP tools over JSON-RPC 2.0.
+
+### CLI Command $\longleftrightarrow$ MCP Tool Mapping
+
+| Intent | CLI Command (`harness.py`) | MCP Tool Equivalent (`mcp_server.py`) | Operational Profile |
+| :--- | :--- | :--- | :--- |
+| **Inspect UI** | `py -3 harness.py inspect [-q Q]` | `desktop_inspect(query=Q)` | Tier 1 UIA crawl (<35ms, ~70 tokens) |
+| **Visual Fallback** | `py -3 harness.py escalate` | `desktop_escalate()` | Tier 2 Lanczos 1280px screenshot (~700 tokens) |
+| **Act + Settle + Inspect** | *(Composite turn)* | `desktop_step(action=..., ...)` | Actuates + 250ms settle + delta perception in 1 turn |
+| **Execute Macro Recipe**| `py -3 harness.py recipe <app> <r> -p k=v` | `app_execute_recipe(app, recipe, params)`| Pinned HWND transaction + dual verification |
+| **Query App Profiles** | `py -3 harness.py ast [--app A]` | `app_query(app=A)` | Lists states, verified recipes & domain hints |
+| **Check Friction Ledger**| `py -3 harness.py struggles [--app A]` | `app_query(app=A)` | Returns logged failure telemetry & workarounds |
+| **Record New Friction** | *(Automated upon recipe failure)* | `app_record_struggle(...)` | Writes to persistent `knowledge/friction_ledger.json` |
+| **Launch / Focus App** | `py -3 harness.py launch <app>` | *Handled automatically in `app_execute_recipe`* | Interactive Shell COM dispatch (`winsta0\default`) |
+| **Working Buffer Sync** | `py -3 harness.py sync <path> --app A` | *Handled automatically in `app_execute_recipe`* | Detects stale tabs, enforces `Ctrl+W` discard |
+
+### MCP Server Protocol
 The MCP server entry point is [`mcp_server.py`](mcp_server.py).
 It communicates over **stdio JSON-RPC 2.0** with strict stream isolation:
 - `stdout`: Reserved exclusively for JSON-RPC messages. **NEVER print to stdout.**

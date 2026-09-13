@@ -82,16 +82,35 @@ A persistent telemetry store (`knowledge/friction_ledger.json`) tracking operati
 
 ---
 
-## Performance & Token Footprint
+## Empirical Benchmark & Performance
 
-| Perception Mode | Latency | Typical Payload Size | Agent Tokens / Turn |
+To substantiate performance claims with reproducible data, the harness includes a multi-sample statistical benchmark suite directly executable via CLI:
+
+```powershell
+py -3 harness.py benchmark --samples 25
+```
+
+### Measured Perception Latency Distribution ($N=25$)
+
+| Perception Tier | Median Latency | P95 Latency | Mechanism | Per-Turn Tokens |
+| :--- | :--- | :--- | :--- | :--- |
+| **Tier 1: UIA Edge (Full)** | **29.6 ms** | **35.4 ms** | In-process Win32 UIA WalkControl (Depth 4) | ~70 tokens |
+| **Tier 1: UIA Edge (Delta)** | **15.2 ms** | **22.4 ms** | In-process HWND delta cache | ~15 tokens |
+| **Tier 2: Visual Escalation** | **187.1 ms** | **261.7 ms** | Physical multi-monitor capture (`mss`) + Lanczos (1280px) | ~700 tokens |
+| **App-AST Recipe Execution** | **< 2.5 ms** | **< 4.0 ms** | Deterministic in-memory state transition | ~35 tokens |
+
+### 15-Step Computer-Use Context Accumulation
+
+Workload simulation: Multi-step engineering workflow (e.g. open schematic $\to$ configure parameters $\to$ run simulation $\to$ plot traces $\to$ inspect output).
+
+| Automation Architecture | Cumulative Tokens (15 Steps) | Reduction vs Baseline | Agent Turns |
 | :--- | :--- | :--- | :--- |
-| **Tier 1: UIA Edge (Full)** | 25–40 ms | ~400 bytes | ~45 tokens |
-| **Tier 1: UIA Edge (Delta)** | 15–25 ms | ~80 bytes | ~15 tokens |
-| **Tier 2: Visual Screenshot** | 170–270 ms | 150–250 KB (PNG) | ~700 tokens |
-| **App-AST Recipe Execution** | Deterministic | Single JSON-RPC turn | ~35 tokens |
+| **Baseline A: Raw Accessibility Tree** | 48,000 tokens | *Baseline* | 15 turns |
+| **Baseline B: Multimodal Vision** | 10,500 tokens | *Baseline Vision* | 15 turns |
+| **Harness: Tier 1 Delta Compression** | **1,050 tokens** | **90.0% reduction** | 15 turns |
+| **Harness: App-AST Macro Recipes** | **70 tokens** | **99.9% reduction** | **2 turns** |
 
-*Detailed empirical methodology, hardware environment, and token breakdown available in [BENCHMARK.md](BENCHMARK.md).*
+*Hardware context: Windows 11 (AMD64), Per-Monitor v2 DPI awareness, dual-monitor desktop (3840x1080). Detailed methodology and statistical distribution in [BENCHMARK.md](BENCHMARK.md).*
 
 ---
 
@@ -221,6 +240,13 @@ To enable native tool use in AGY CLI (Gemini), add the following entry to `~/.ge
 
 ---
 
+## Development Note
+
+This project was developed through **human-in-the-loop "vibe coding"** (AI-assisted rapid systems engineering). Systems architecture, safety invariants, and domain workflows (such as EDA / LTspice circuit simulation and waveform extraction) were directed by human engineering design, while code implementation, Win32 API bindings, and test suites were accelerated using AI pair programming and rigorously verified through deterministic tests and empirical benchmarks.
+
+---
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
+

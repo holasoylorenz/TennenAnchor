@@ -15,9 +15,23 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import re
+
 logger = logging.getLogger("desktop_harness.struggle_tracker")
 
 DEFAULT_LEDGER_PATH = Path(__file__).resolve().parent.parent / "knowledge" / "friction_ledger.json"
+
+
+def sanitize_privacy_text(text: Optional[str]) -> Optional[str]:
+    """Strips local Windows user directories and usernames to guarantee zero privacy leakage."""
+    if not text:
+        return text
+    # Replace Windows user profile paths like C:\Users\<name> with ~
+    cleaned = re.sub(r"[A-Za-z]:[\\/]Users[\\/][^\\/]+", "~", text, flags=re.IGNORECASE)
+    user = os.environ.get("USERNAME") or os.environ.get("USER")
+    if user and len(user) > 1:
+        cleaned = cleaned.replace(user, "<user>")
+    return cleaned
 
 
 @dataclass
@@ -97,6 +111,11 @@ class StruggleTracker:
     ) -> FrictionEvent:
         """Records a friction event. If a matching event already exists for app+action+symptom, increments occurrences."""
         app_norm = app.lower().strip()
+        action_clean = sanitize_privacy_text(action) or ""
+        symptom_clean = sanitize_privacy_text(symptom) or ""
+        resolution_clean = sanitize_privacy_text(resolution)
+        refinement_clean = sanitize_privacy_text(refinement)
+
         with self._lock:
             events = self._load_events_unlocked()
 
@@ -104,15 +123,15 @@ class StruggleTracker:
             for e in events:
                 if (
                     e.app.lower() == app_norm
-                    and e.action.strip().lower() == action.strip().lower()
-                    and e.symptom.strip().lower() == symptom.strip().lower()
+                    and e.action.strip().lower() == action_clean.strip().lower()
+                    and e.symptom.strip().lower() == symptom_clean.strip().lower()
                 ):
                     e.occurrences += 1
                     e.timestamp = datetime.now(timezone.utc).isoformat()
-                    if resolution and not e.resolution:
-                        e.resolution = resolution
-                    if refinement and not e.refinement:
-                        e.refinement = refinement
+                    if resolution_clean and not e.resolution:
+                        e.resolution = resolution_clean
+                    if refinement_clean and not e.refinement:
+                        e.refinement = refinement_clean
                     self._save_events_unlocked(events)
                     return e
 
@@ -121,16 +140,16 @@ class StruggleTracker:
             new_event = FrictionEvent(
                 id=event_id,
                 app=app_norm,
-                action=action,
+                action=action_clean,
                 category=category,
-                symptom=symptom,
+                symptom=symptom_clean,
                 severity=severity,
-                resolution=resolution,
-                refinement=refinement,
+                resolution=resolution_clean,
+                refinement=refinement_clean,
             )
             events.append(new_event)
             self._save_events_unlocked(events)
-            logger.info("Recorded new friction event: %s (%s: %s)", event_id, app, action)
+            logger.info("Recorded new friction event: %s (%s: %s)", event_id, app, action_clean)
             return new_event
 
     def get_events(self, app: Optional[str] = None) -> List[FrictionEvent]:

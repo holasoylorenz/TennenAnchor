@@ -9,10 +9,34 @@ __pycache__/
 htmlcov/
 
 # Local outputs & binary screen captures
-outputs/screenshots/*.png
+outputs/screenshots/
 outputs/*.raw
 outputs/*.log
 !outputs/.gitkeep
+!outputs/amplifier.asc
+
+# Privacy & document protection (never commit user documents or screenshots)
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.bmp
+*.gif
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.pptx
+*.pdf
+*.csv
+scratch/
+
+# Secrets & local environment
+.env*
+*.key
+*.pem
+*.token
+*id_rsa*
 
 # Environments & packages
 .venv/

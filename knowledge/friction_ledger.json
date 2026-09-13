@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-09-13T19:45:00Z",
+  "events": [
+    {
+      "id": "fric_ltspice_001",
+      "app": "ltspice",
+      "action": "os.startfile('amplifier.asc')",
+      "category": "UNRESPONSIVE_MECHANISM",
+      "symptom": "Windows shell open ignored when LTspice instance is already running; document was not loaded into workspace.",
+      "timestamp": "2026-09-13T19:35:00Z",
+      "severity": "high",
+      "resolution": "Use in-app hotkey Ctrl+O to open native file dialog, type full path, and press Enter.",
+      "refinement": "Seed 'open_schematic' recipe in LTspice AST using Ctrl+O hotkey instead of OS shell open.",
+      "occurrences": 1
+    },
+    {
+      "id": "fric_ltspice_002",
+      "app": "ltspice",
+      "action": "subprocess.run(['LTspice.exe', '-b', 'amplifier.asc'])",
+      "category": "UNRESPONSIVE_MECHANISM",
+      "symptom": "Process hangs indefinitely when executed with -b flag without active graphical session context.",
+      "timestamp": "2026-09-13T19:34:40Z",
+      "severity": "high",
+      "resolution": "Launch LTspice in GUI mode and trigger simulation via Run toolbar button (#7 @ 467, 279).",
+      "refinement": "Mark batch CLI mode as unreliable for ad-hoc agent automation; prefer GUI simulation with UIA run trigger.",
+      "occurrences": 1
+    },
+    {
+      "id": "fric_winword_001",
+      "app": "winword",
+      "action": "doc.SaveAs2('file.docx')",
+      "category": "EXECUTION_ERROR",
+      "symptom": "pywintypes.com_error: Call was rejected by callee (-2147418111).",
+      "timestamp": "2026-09-13T19:31:30Z",
+      "severity": "medium",
+      "resolution": "Ensure document is not in modal editing state, or create document via file generator / doc.SaveAs before interactive dispatch.",
+      "refinement": "Add modal state check and retry guard for COM automation calls on Office 2010/2013.",
+      "occurrences": 1
+    }
+  ]
+}

@@ -12,7 +12,7 @@ Closed-loop, state-verified Windows automation runtime for AI agents — built o
 
 ![GroundPlane Autonomous Hierarchical Circuit Demo](assets/demo.gif)
 
-*The Ultimate Analog Demonstration: Autonomous multi-sheet hierarchical design and verification of a Class-D Audio Power Amplifier with a Switch-Mode Power Supply (SMPS) in LTspice. Every sub-circuit schematic, custom block symbol, and top-level coordinator was **generated entirely on the fly** on a strict 16-pixel grid before launching. GroundPlane attaches to LTspice, iterates through the generated sub-block sheets (`smps_buck.asc`, `carrier_gen.asc`, `pwm_modulator.asc`, `power_stage.asc`) to showcase internal topologies, opens the interconnected top-level coordinator (`top_class_d.asc`), executes transient simulation in 1.7s, plots the demodulated audio and switching waveforms, and validates ground-truth metrics ($5.00\text{V}$ SMPS regulation with $24\text{mV}$ ripple, $1.0\text{W RMS}$ clean audio delivery into $8\Omega$) against the simulation log.*
+*All 9 files — four sub-circuit schematics, four custom block symbols, and the top-level coordinator — were **generated entirely on the fly**. GroundPlane then attached to LTspice, navigated each sub-block sheet, ran transient simulation in 1.7 s, and validated SMPS regulation ($5.00\text{ V}$, $24\text{ mV}$ ripple) and audio output ($1.0\text{ W RMS}$ into $8\,\Omega$) against the simulation log.*
 
 ---
 
@@ -20,11 +20,9 @@ Closed-loop, state-verified Windows automation runtime for AI agents — built o
 
 In analog and RF electronics, a **ground plane** provides an equipotential, noise-free reference plane across the entire PCB, preventing ground loops, signal drift, and stray interference.
 
-In computer-use agents, **GroundPlane** plays the exact same role: it is the reference foundation that grounds desktop AI agents, eliminating coordinate drift, context exhaustion, and blind open-loop clicking.
+In computer-use agents, **GroundPlane** plays the exact same role: it is the reference foundation that grounds desktop AI agents, preventing coordinate drift, context exhaustion, and blind open-loop clicking.
 
-Built first and foremost as a high-speed personal power tool for desktop experimentation, GroundPlane was forged on an electrical engineer's desktop automating the hardest native software around: **LTspice**, with custom GPU/DirectX viewports, zero accessibility nodes on schematics, modal dialog traps, and out-of-sync working buffers. 
-
-Mastering LTspice demonstrates exactly what the framework is built for: closed-loop robustness on native Win32 applications with DirectX/GDI viewports, zero accessibility nodes, modal dialog traps, and out-of-sync in-memory working buffers — the class of software where DOM crawlers and screenshot agents fail silently.
+Built first and foremost as a high-speed personal power tool for desktop experimentation, GroundPlane was forged on an electrical engineer's desktop automating the hardest native software around: **LTspice** — custom GPU/DirectX viewports, zero accessibility nodes on schematics, modal dialog traps, and out-of-sync working buffers. That class of software is where DOM crawlers and screenshot agents fail silently.
 
 ---
 
@@ -85,7 +83,7 @@ Following the gateway and decoupled adapter architecture found in modern agent i
 +-------------------------------------------------------------------------+
 ```
 
-### 1. Dual-Tier Perception (Universal for Any App)
+### 1. Dual-Tier Perception
 - **Tier 1 (Win32 / UIA)**: Walks the active foreground window's accessibility tree in <35ms, filtering non-interactive noise and generating clean control IDs (`#1 [Btn "Run"]`). Consumes ~70 tokens per turn.
 - **Tier 2 (Lanczos Visual Fallback)**: Automatically captures a 1280px downscaled screenshot only when an active surface contains 0 accessibility nodes (e.g. EDA schematics, 3D viewports, or custom canvases).
 
@@ -121,8 +119,8 @@ py -3 harness.py inspect
 py -3 harness.py inspect --query "Render"
 ```
 
-### 2. Supercharging with App-AST Recipes
-To give your agent 1-turn macro execution in a new app (e.g. Blender, KiCad, or an audio DAW), simply drop a JSON profile into `knowledge/apps/<app>.json`:
+### 2. App-AST Recipes (One Profile, One Turn)
+To give your agent 1-turn macro execution in a new app (e.g. Blender, KiCad, or an audio DAW), drop a JSON profile into `knowledge/apps/<app>.json`:
 ```json
 {
   "app_id": "myapp",
@@ -143,7 +141,8 @@ To give your agent 1-turn macro execution in a new app (e.g. Blender, KiCad, or 
   }
 }
 ```
-Instantly, the agent can call `app_execute_recipe("myapp", "export_render")` in 1 turn (~35 tokens).
+The agent can then call `app_execute_recipe("myapp", "export_render")` in 1 turn (~35 tokens).
+
 
 ---
 

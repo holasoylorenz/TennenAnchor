@@ -152,34 +152,13 @@ class AppLifecycleBroker:
 
         logger.info("Application '%s' is not running. Launching via Shell Broker...", profile.app_id)
 
-        # Step 2: Resolve executable path
-        exe_path = self.resolve_executable_path(profile)
-        launched = False
-
-        if exe_path and exe_path.exists():
-            try:
-                import win32com.client
-                shell = win32com.client.Dispatch("Shell.Application")
-                # ShellExecute: file, args, dir, op, show
-                args = ""
-                if profile.app_id == "ltspice":
-                    default_asc = Path(__file__).resolve().parent.parent / "outputs" / "miller_ota.asc"
-                    if default_asc.exists():
-                        args = str(default_asc.resolve())
-                shell.ShellExecute(str(exe_path), args, str(exe_path.parent), "open", 1)
-                launched = True
-                logger.info("Dispatched ShellExecute for: %s (args: %s)", exe_path, args)
-            except Exception as e:
-                logger.warning("ShellExecute failed: %s; falling back to Start Menu", e)
-
-        if not launched:
-            # Fallback: interactive Start Menu actuation
-            logger.info("Launching '%s' via interactive Start Menu sequence...", profile.name)
-            self.controller.press_key("win")
-            time.sleep(0.4)
-            self.controller.type_text(profile.name)
-            time.sleep(0.4)
-            self.controller.press_key("enter")
+        # Step 2: Launch via interactive Windows Searchbar (bypasses console session isolation)
+        logger.info("Launching '%s' via interactive Windows Searchbar...", profile.name)
+        self.controller.press_key("win")
+        time.sleep(0.6)
+        self.controller.type_text(profile.name)
+        time.sleep(0.8)
+        self.controller.press_key("enter")
 
         # Step 3: Warm-up watchdog loop
         t0 = time.perf_counter()

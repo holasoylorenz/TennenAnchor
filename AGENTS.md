@@ -101,11 +101,11 @@ Do not manually click through dialogs or menus when an App-AST recipe exists.
 - **Bad**: `desktop_inspect` $\to$ click File $\to$ `desktop_inspect` $\to$ click Open $\to$ `desktop_inspect` $\to$ type path $\to$ click OK (15 turns, ~10k tokens).
 - **Good**: `app_execute_recipe(app="ltspice", recipe="open_schematic", params={"path": "..."})` (1 turn, ~35 tokens).
 
-### Rule 2: Foreground Focus & User-Space Invariant
-GroundPlane operates on applications running in the user's interactive desktop space.
-Because agent subshells running in sandboxed console sessions cannot cross Windows station boundaries to cold-spawn top-level GUI surfaces from a closed state, **the target application must already be open in the user's desktop space**.
-- **Operation**: Once the application is running in user space, GroundPlane discovers its HWND, un-minimizes it, asserts focus, and executes closed-loop macro recipes automatically.
-- **Rule for Agents**: Ensure the target application is running in user space. If not found, inform the user to open the application so GroundPlane can attach to it.
+### Rule 2: Application Lifecycle & Launch Strategy
+GroundPlane manages target desktop applications seamlessly:
+- **Cold-Start Launching**: If an application is not running, GroundPlane uses the native interactive Windows Searchbar sequence (`Win` key $\to$ types app name $\to$ `Enter`). This operates within the user's interactive desktop shell, bypassing console isolation traps, and launches the application in <1 second.
+- **Existing Instances**: If the application is already open, GroundPlane discovers its HWND via ctypes enumeration, un-minimizes it, asserts focus, and executes closed-loop macro recipes automatically.
+- **Recipe Integration**: All recipes (`app_execute_recipe`) automatically ensure the target application is running and focused before executing steps.
 
 ### Rule 3: Working Buffer Synchronization (Disk vs GUI)
 Native desktop software (LTspice, Word, CAD) **does NOT automatically reload modified files from disk** if the file tab is already open in memory.

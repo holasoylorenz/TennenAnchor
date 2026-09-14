@@ -1,0 +1,48 @@
+# GroundPlane
+
+> Closed-loop, state-verified Windows automation runtime for AI agents — from EDA and CAD to any desktop application. Combines lightweight Win32/UIA perception (<35ms), application state machines (App-AST), working buffer synchronization, and closed-loop verification.
+
+## Core Capabilities
+- **Dual-Tier Perception**: Walks native Windows UI accessibility trees in <35ms (~70 tokens), with automatic 1280px Lanczos vision fallback for custom viewports and EDA canvases.
+- **App-AST Macro Recipes**: Converts 15-step UI navigation sequences (e.g. menus, dialogs, parameters) into atomic, HWND-pinned verified transactions, reducing context burn by 99.9%.
+- **Working Buffer Synchronization**: Prevents stale in-memory tab executions by hashing on-disk files and enforcing tab-discard reload policies (`Ctrl+W` -> `Ctrl+O`).
+- **Closed-Loop Dual Verification**: Channel A verifies UI state transitions; Channel B parses simulation/output logs (`.log`, `.raw`, `.csv`) against real numerical constraints.
+- **Process Safety Guard**: Prevents host terminal termination (`Alt+F4` or close events) by tracking parent-child process trees.
+- **Self-Healing Friction Ledger**: Logs UI quirks and state discrepancies to `knowledge/friction_ledger.json` for automatic retry and heuristic selection.
+- **Universal Application Support**: Fully application-agnostic core; pluggable JSON state trees in `knowledge/apps/<app>.json` supercharge any tool in 60 seconds.
+
+## Quickstart
+```powershell
+# Install GroundPlane in editable mode
+py -3 -m pip install -e .
+
+# Developer mode with visual recording tools
+py -3 -m pip install -e .[dev,recording]
+
+# Inspect foreground window (<35ms)
+py -3 harness.py inspect
+
+# Query application state graphs and verified recipes
+py -3 harness.py ast --app ltspice
+
+# Execute an App-AST verified recipe
+py -3 harness.py recipe ltspice open_schematic --params path=outputs/miller_ota.asc
+py -3 harness.py recipe ltspice run_simulation
+```
+
+## MCP Tools (Stdio JSON-RPC 2.0)
+- `desktop_inspect(query, mode)`: Tier 1 UIA crawl returning control labels and IDs (#ID).
+- `desktop_escalate(target)`: Tier 2 Lanczos 1280px visual capture for non-standard canvases.
+- `desktop_act(action, element_id, coordinates, text, keys, key)`: Unified Win32 mouse/keyboard actuation.
+- `desktop_step(...)`: Combined actuation + 250ms settle + perception in a single turn.
+- `app_query(app)`: Introspects registered application profiles, states, and verified recipes.
+- `app_execute_recipe(app, recipe, params)`: Pinned HWND atomic transaction execution.
+- `app_record_struggle(...)`: Writes operational quirks to persistent friction ledger.
+
+## Key Files & References
+- `AGENTS.md`: Operational runtime guide, focus invariants, and CLI-to-MCP translations for AI agents.
+- `mcp_server.py`: Stdio JSON-RPC 2.0 MCP server entry point.
+- `harness.py`: Interactive CLI broker for testing and automation (`groundplane` entry point).
+- `core/circuit_builder.py`: Human-grade schematic layout engine for analog IC synthesis in LTspice.
+- `BENCHMARK.md`: Empirical latency and token accounting benchmarks (N=25).
+- `WALKTHROUGH.md`: Turn-by-turn trace of autonomous analog circuit optimization.

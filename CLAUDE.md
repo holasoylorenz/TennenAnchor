@@ -1,10 +1,10 @@
-# CLAUDE.md — Desktop Control Harness Agent Guide
+# CLAUDE.md — GroundPlane Agent Guide
 
 See [AGENTS.md](AGENTS.md) for full architectural guidelines, invariants, and App-AST references.
 
 ## Quickstart Commands
 ```powershell
-# 1. Run unit test suite (fast verification, 38 tests, ~5s)
+# 1. Run unit test suite (fast verification, 47 tests, ~5s)
 py -3 -m pytest
 
 # 2. Inspect active foreground window (Tier 1 UIA, <35ms)

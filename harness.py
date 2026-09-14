@@ -1,7 +1,7 @@
 """
-Standalone Desktop Automation CLI Harness.
+GroundPlane CLI — Closed-loop execution and verification runtime for Windows agents.
 Allows inspecting the screen, testing actuation, querying App-AST profiles,
-reviewing the struggle ledger, and executing multi-step desktop recipes directly from the CLI.
+reviewing the friction ledger, and executing multi-step verified recipes directly from the CLI.
 """
 
 from __future__ import annotations

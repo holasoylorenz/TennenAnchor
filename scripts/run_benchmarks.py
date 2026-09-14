@@ -1,5 +1,5 @@
 """
-Empirical Benchmark Suite for desktop-control-harness.
+Empirical Benchmark Suite for GroundPlane.
 Evaluates perception latencies (Median, P95 across N samples) and calculates
 exact token footprints comparing Raw Accessibility Tree vs Multi-modal Vision vs Tier 1 Delta vs App-AST.
 Generates an anonymized, reproducible BENCHMARK.md report.

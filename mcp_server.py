@@ -531,8 +531,8 @@ def process_json_rpc(request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                 "protocolVersion": "2024-11-05",
                 "capabilities": {"tools": {}},
                 "serverInfo": {
-                    "name": "desktop-harness",
-                    "version": "1.1.0",
+                    "name": "groundplane",
+                    "version": "1.2.0",
                 },
             },
         }

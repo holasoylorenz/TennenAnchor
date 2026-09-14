@@ -1,6 +1,6 @@
 # End-to-End Walkthrough: Autonomous Circuit Simulation & Parameter Re-Tuning
 
-A complete, reproducible trace demonstrating how **Harness 2.0** automates complex native desktop engineering software (**LTspice**) through App-AST macro transactions, working buffer synchronization, and dual-channel verification.
+A complete, reproducible trace demonstrating how **GroundPlane** automates complex native desktop engineering software (**LTspice**) through App-AST macro transactions, working buffer synchronization, and dual-channel verification.
 
 ---
 
@@ -123,13 +123,13 @@ Reason       : Document 'miller_ota.asc' is not currently active; direct open is
     "arguments": {
       "app": "ltspice",
       "recipe": "open_schematic",
-      "params": {"path": "C:/circuits/desktop-control-harness/outputs/miller_ota.asc"}
+      "params": {"path": "outputs/miller_ota.asc"}
     }
   }
 }
 ```
 
-**Execution Pipeline Inside Harness 2.0**:
+**Execution Pipeline Inside GroundPlane**:
 1. `AppLifecycleBroker`: Resolves `LTspice.exe` and pins target HWND `526698`.
 2. `BufferSyncManager`: Checks if `miller_ota.asc` is already open. If open, triggers `Ctrl+W` tab discard.
 3. `Focus Invariant Guard`: Asserts `user32.GetForegroundWindow() == 526698`.
@@ -207,9 +207,9 @@ Pinned HWND: 526698
 
 ---
 
-## 3. Comparison: Generic Computer-Use vs. Harness 2.0
+## 3. Comparison: Generic Computer-Use vs. GroundPlane
 
-| Dimension | Generic Computer-Use (Vision-Only) | Naive Accessibility (Raw UIA) | Harness 2.0 Runtime |
+| Dimension | Generic Computer-Use (Vision-Only) | Naive Accessibility (Raw UIA) | GroundPlane Runtime |
 | :--- | :--- | :--- | :--- |
 | **Turns per Run** | 12–18 conversational turns | 8–12 turns | **2 turns** |
 | **Token Consumption** | ~10,500 tokens (1280px tiles) | ~48,000 tokens (XML dump) | **~75 tokens (99.9% reduction)** |
@@ -225,7 +225,7 @@ Pinned HWND: 526698
 Run the automated parametric experiment locally:
 
 ```powershell
-# 1. Install harness dependencies
+# 1. Install GroundPlane dependencies
 py -3 -m pip install -e .
 
 # 2. Run the complete Miller OTA parameter experiment

@@ -19,14 +19,16 @@ from core.struggle_tracker import StruggleTracker
 from perception.edge_parser import EdgeUIAParser
 
 import ctypes
+from ctypes import wintypes
 user32 = ctypes.windll.user32
+user32.GetForegroundWindow.restype = wintypes.HWND
 
-logger = logging.getLogger("desktop_harness.playbook_runner")
+logger = logging.getLogger("groundplane.playbook_runner")
 
 
 class PlaybookRunner:
     """
-    Pinned Transaction Runner (Harness 2.0).
+    GroundPlane Pinned Transaction Runner.
     Executes verified macro recipes from AppProfile graphs with
     managed lifecycle attachment, buffer synchronization, focus pinning,
     and dual-channel artifact verification.
@@ -95,13 +97,16 @@ class PlaybookRunner:
         if pinned_hwnd:
             self.controller.force_focus_window(pinned_hwnd)
 
-        # Optional Session Recorder for Visual Proof
+        # Optional Session Recorder for Visual Proof (Dev Mode)
         recorder = None
         if record:
-            from core.recorder import WindowScopedRecorder
-            recorder = WindowScopedRecorder(hwnd=pinned_hwnd)
-            recorder.start()
-            recorder.set_status(f"Starting {recipe_id}")
+            from core.recorder import WindowScopedRecorder, is_recorder_available
+            if is_recorder_available():
+                recorder = WindowScopedRecorder(hwnd=pinned_hwnd)
+                recorder.start()
+                recorder.set_status(f"Starting {recipe_id}")
+            else:
+                logger.info("Recording requested but developer dependencies (mss) are not installed. Install with 'pip install -e .[recording]'.")
 
         # 2. Buffer Synchronization (Disk vs GUI Working Buffer)
         doc_path = params.get("path") or params.get("file")
@@ -111,7 +116,7 @@ class PlaybookRunner:
                 logger.info("BufferSyncManager: Discarding active in-memory buffer via %s prior to reload", plan["requires_close_hotkey"])
                 if recorder:
                     recorder.set_status("BufferSync: Discarding stale in-memory tab")
-                self.controller.hotkey(plan["requires_close_hotkey"])
+                self.controller.hotkey(plan["requires_close_hotkey"], target_hwnd=pinned_hwnd)
                 time.sleep(0.3)
 
         # Pre-execution perception check
@@ -261,7 +266,9 @@ class PlaybookRunner:
             inspect_res = self.parser.parse_active_window(query=target_name)
             coords = None
             for el in inspect_res.get("elements", []):
-                if target_name in (el.get("name") or "").lower():
+                el_name = (el.get("name") or "").lower()
+                el_type = (el.get("type") or "").lower()
+                if target_name in el_name or target_name == el_type:
                     coords = el.get("center")
                     break
 
@@ -295,7 +302,7 @@ class PlaybookRunner:
             if not target_state:
                 return
 
-            timeout_sec = 4.0
+            timeout_sec = max(4.0, (step.wait_ms or 0) / 1000.0)
             t_start = time.time()
             matched = False
             while time.time() - t_start < timeout_sec:

@@ -1,6 +1,6 @@
-# AGENTS.md — Desktop Control Harness Agent Guide
+# AGENTS.md — GroundPlane Agent Guide
 
-Operational runtime guidance for AI computer-use agents (Claude Code, Antigravity CLI, Anthropic Computer Use) interacting with Windows desktop applications via this harness.
+Operational runtime guidance for AI computer-use agents (Claude Code, Antigravity CLI, Cursor, OpenAI) interacting with Windows desktop and EDA applications via GroundPlane.
 
 ---
 
@@ -12,7 +12,7 @@ All commands assume Windows 10/11 with Python 3.10+ and Per-Monitor v2 DPI aware
 # 0. One-time setup (install dependencies in editable mode)
 py -3 -m pip install -e .
 
-# 1. Run unit test suite (fast verification, 38 tests, ~5s)
+# 1. Run unit test suite (fast verification, 47 tests, ~5s)
 py -3 -m pytest
 
 # 2. Inspect active foreground window (Tier 1 UIA, <35ms)
@@ -72,9 +72,9 @@ It communicates over **stdio JSON-RPC 2.0** with strict stream isolation:
 ```json
 {
   "mcpServers": {
-    "desktop-harness": {
+    "groundplane": {
       "command": "py",
-      "args": ["-3", "C:\\path\\to\\desktop-control-harness\\mcp_server.py"]
+      "args": ["-3", "C:\\path\\to\\groundplane\\mcp_server.py"]
     }
   }
 }

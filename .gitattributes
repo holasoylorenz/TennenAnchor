@@ -1,0 +1,9 @@
+# Git Attributes for Desktop Control Harness
+# Marks developer-only assets and heavy binary files to be excluded from release distributions (git archive)
+
+assets/*.gif export-ignore
+assets/*.png export-ignore
+outputs/recordings/* export-ignore
+scripts/record_showcase.py export-ignore
+scratch/* export-ignore
+.pytest_cache export-ignore

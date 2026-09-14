@@ -20,7 +20,7 @@ def test_mcp_initialize():
     assert resp is not None
     assert resp["id"] == 1
     assert "result" in resp
-    assert resp["result"]["serverInfo"]["name"] == "desktop-harness"
+    assert resp["result"]["serverInfo"]["name"] == "groundplane"
     assert "tools" in resp["result"]["capabilities"]
 
 

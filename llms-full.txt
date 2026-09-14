@@ -1,0 +1,73 @@
+# GroundPlane — Full Agent Specification
+
+## 1. Overview
+GroundPlane is a closed-loop execution and verification runtime designed for AI agents operating on Windows 10/11 desktops. It interfaces directly with native Win32 controls, UI Automation (UIA), and Per-Monitor v2 DPI APIs to eliminate the latency, token exhaustion, and drift associated with open-loop screenshot-and-coordinate clicking. Born on an electrical engineer's desktop to conquer LTspice, it is fully universal and controls any desktop application.
+
+## 2. Invariants & Rules
+1. **Rule of Verified Recipes**: When an App-AST verified recipe exists, execute it rather than planning raw mouse clicks. Reduces turns from ~15 to 1 and tokens from ~10,000 to ~35.
+2. **Foreground Focus Invariant**: Perception inspects `GetForegroundWindow()`. Ensure target applications are brought to foreground via Shell COM Broker before reading control IDs.
+3. **Working Buffer Sync (Disk vs GUI)**: Native desktop applications (LTspice, Word, CAD) do not automatically reload files modified on disk. Check buffer sync or enforce tab-discard hotkeys (`Ctrl+W` -> `Ctrl+O`) before re-simulating.
+4. **Coordinate Grounding**:
+   - Element IDs (#ID) from `desktop_inspect` are valid only for the inspected window state.
+   - Escalated screenshots can be addressed using normalized coordinates [0, 1000] with `is_normalized: true`.
+5. **Terminal Protection**: The process tree is actively monitored; actions targeting the host shell or agent PID are rejected.
+
+## 3. Tool Reference (MCP Server)
+```json
+{
+  "desktop_inspect": {
+    "parameters": {
+      "query": "Optional label substring filter",
+      "mode": "summary | find | all"
+    }
+  },
+  "desktop_escalate": {
+    "parameters": {
+      "target": "active_window | full_screen"
+    }
+  },
+  "desktop_act": {
+    "parameters": {
+      "action": "click | double_click | right_click | type | hotkey | press_key",
+      "element_id": "Target #ID string",
+      "coordinates": {"x": 500, "y": 500, "is_normalized": true},
+      "text": "Text to type",
+      "keys": ["ctrl", "o"]
+    }
+  },
+  "desktop_step": {
+    "parameters": {
+      "action": "Action string",
+      "wait_ms": 250
+    }
+  },
+  "app_query": {
+    "parameters": {
+      "app": "Application ID (e.g. ltspice)"
+    }
+  },
+  "app_execute_recipe": {
+    "parameters": {
+      "app": "ltspice",
+      "recipe": "open_schematic",
+      "params": {"path": "outputs/circuit.asc"},
+      "record": false
+    }
+  },
+  "app_record_struggle": {
+    "parameters": {
+      "app": "ltspice",
+      "action": "run_simulation",
+      "symptom": "Dialog did not open",
+      "resolution": "Increased wait_ms to 800",
+      "severity": "minor"
+    }
+  }
+}
+```
+
+## 4. Empirical Performance Snapshot
+- Tier 1 Perception Latency: 29.6 ms (median, N=25)
+- Tier 1 Context Cost: ~73 tokens / turn
+- App-AST Macro Execution: < 2.5 ms dispatch, ~35 tokens / turn
+- Context Savings vs Raw Accessibility Tree: 99.9% (70 tokens vs 48,000 tokens for 15-step flows)

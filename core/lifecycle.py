@@ -24,7 +24,9 @@ from core.dpi import ensure_interactive_desktop
 logger = logging.getLogger("desktop_harness.lifecycle")
 
 user32 = ctypes.windll.user32
-WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+user32.EnumWindows.argtypes = [WNDENUMPROC, wintypes.LPARAM]
+user32.EnumWindows.restype = wintypes.BOOL
 
 
 class AppLifecycleBroker:
@@ -159,9 +161,14 @@ class AppLifecycleBroker:
                 import win32com.client
                 shell = win32com.client.Dispatch("Shell.Application")
                 # ShellExecute: file, args, dir, op, show
-                shell.ShellExecute(str(exe_path), "", str(exe_path.parent), "open", 1)
+                args = ""
+                if profile.app_id == "ltspice":
+                    default_asc = Path(__file__).resolve().parent.parent / "outputs" / "miller_ota.asc"
+                    if default_asc.exists():
+                        args = str(default_asc.resolve())
+                shell.ShellExecute(str(exe_path), args, str(exe_path.parent), "open", 1)
                 launched = True
-                logger.info("Dispatched ShellExecute for: %s", exe_path)
+                logger.info("Dispatched ShellExecute for: %s (args: %s)", exe_path, args)
             except Exception as e:
                 logger.warning("ShellExecute failed: %s; falling back to Start Menu", e)
 

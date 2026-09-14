@@ -21,6 +21,8 @@ def ensure_interactive_desktop() -> bool:
     try:
         user32 = ctypes.windll.user32
         hdesk = user32.OpenInputDesktop(0, False, 0x01FF)
+        if not hdesk:
+            hdesk = user32.OpenDesktopW("Default", 0, False, 0x01FF)
         if hdesk:
             return bool(user32.SetThreadDesktop(hdesk))
     except Exception:

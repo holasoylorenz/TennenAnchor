@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated_at": "2026-09-13T19:33:02.462250+00:00",
+  "updated_at": "2026-09-14T21:31:02.248624+00:00",
   "events": [
     {
       "id": "fric_ltspice_001",
@@ -61,6 +61,18 @@
       "resolution": null,
       "refinement": null,
       "occurrences": 4
+    },
+    {
+      "id": "fric_ltspice_006",
+      "app": "ltspice",
+      "action": "recipe:plot_trace:step_2:click_control",
+      "category": "EXECUTION_ERROR",
+      "symptom": "Target control '{trace}' not found in active window.",
+      "timestamp": "2026-09-14T21:31:02.248619+00:00",
+      "severity": "high",
+      "resolution": null,
+      "refinement": null,
+      "occurrences": 3
     }
   ]
 }

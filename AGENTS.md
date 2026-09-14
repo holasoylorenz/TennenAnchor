@@ -101,11 +101,11 @@ Do not manually click through dialogs or menus when an App-AST recipe exists.
 - **Bad**: `desktop_inspect` $\to$ click File $\to$ `desktop_inspect` $\to$ click Open $\to$ `desktop_inspect` $\to$ type path $\to$ click OK (15 turns, ~10k tokens).
 - **Good**: `app_execute_recipe(app="ltspice", recipe="open_schematic", params={"path": "..."})` (1 turn, ~35 tokens).
 
-### Rule 2: Foreground Focus Invariant
-`desktop_inspect` and `harness.py inspect` inspect `GetForegroundWindow()`.
-If the target application is minimized or behind the agent terminal, perception will read the wrong window.
-- **Terminal**: Run `py -3 harness.py launch <app>` to guarantee the app is restored, focused, and ready.
-- **MCP**: `app_execute_recipe` handles focus restoration and HWND pinning automatically. If manually controlling via `desktop_step`, ensure the window is active before inspecting.
+### Rule 2: Foreground Focus & User-Space Invariant
+GroundPlane operates on applications running in the user's interactive desktop space.
+Because agent subshells running in sandboxed console sessions cannot cross Windows station boundaries to cold-spawn top-level GUI surfaces from a closed state, **the target application must already be open in the user's desktop space**.
+- **Operation**: Once the application is running in user space, GroundPlane discovers its HWND, un-minimizes it, asserts focus, and executes closed-loop macro recipes automatically.
+- **Rule for Agents**: Ensure the target application is running in user space. If not found, inform the user to open the application so GroundPlane can attach to it.
 
 ### Rule 3: Working Buffer Synchronization (Disk vs GUI)
 Native desktop software (LTspice, Word, CAD) **does NOT automatically reload modified files from disk** if the file tab is already open in memory.

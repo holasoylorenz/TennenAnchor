@@ -1,6 +1,6 @@
 # GroundPlane
 
-Closed-loop, state-verified Windows automation runtime for AI agents — from EDA and CAD to any desktop application.
+Closed-loop, state-verified Windows automation runtime for AI agents — built on EDA and CAD, targeting native desktop applications where accessibility crawlers fall short.
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-0078D6.svg)](https://microsoft.com/windows)
@@ -24,7 +24,7 @@ In computer-use agents, **GroundPlane** plays the exact same role: it is the ref
 
 Built first and foremost as a high-speed personal power tool for desktop experimentation, GroundPlane was forged on an electrical engineer's desktop automating the hardest native software around: **LTspice**, with custom GPU/DirectX viewports, zero accessibility nodes on schematics, modal dialog traps, and out-of-sync working buffers. 
 
-**If an agent can reliably master LTspice, it can automate any tool on Windows.**
+Mastering LTspice demonstrates exactly what the framework is built for: closed-loop robustness on native Win32 applications with DirectX/GDI viewports, zero accessibility nodes, modal dialog traps, and out-of-sync in-memory working buffers — the class of software where DOM crawlers and screenshot agents fail silently.
 
 ---
 
@@ -34,7 +34,7 @@ Standard computer-use agents automate desktop applications through an unconstrai
 
 $$\text{Agent} \longrightarrow \text{Screenshot (~700 tokens)} \longrightarrow \text{VLM Inference} \longrightarrow \text{Click Coordinate} \longrightarrow \dots$$
 
-When automating native desktop software (EDA, CAD, Blender, audio DAWs, legacy Win32, Office), this pattern consistently fails:
+When automating native desktop software (EDA, CAD, Blender, audio DAWs, legacy Win32, Office), this pattern runs into predictable, hard failure modes:
 
 - **Context Exhaustion**: Serializing full accessibility trees or screenshots consumes 3,000–5,000 tokens per action, exhausting context limits within 10–15 steps.
 - **Coordinate and DPI Drift**: Multi-monitor setups and Per-Monitor v2 DPI scaling (125%, 150%) cause clicks to land off-target.
@@ -107,18 +107,18 @@ Task completion is verified through two independent channels:
 
 ---
 
-## Controlling Any Application in 60 Seconds
+## Extending to Other Applications
 
-GroundPlane is not limited to LTspice or Word. You can automate **any desktop application** in two ways:
+GroundPlane is not limited to LTspice or Word. The same runtime can target other native Windows desktop applications in two ways:
 
-### 1. Universal Direct Control (Zero Configuration)
-Use the generic MCP tools (`desktop_inspect`, `desktop_step`, `desktop_act`) or CLI commands. GroundPlane inspects whatever window is currently active:
+### 1. Active Window Control (No Profile Required)
+Use the generic MCP tools (`desktop_inspect`, `desktop_step`, `desktop_act`) or CLI commands. GroundPlane inspects whatever window is currently in the foreground:
 ```powershell
 # Inspect controls of whatever window is active right now (<35ms)
-groundplane inspect
+py -3 harness.py inspect
 
 # Filter controls on the fly
-groundplane inspect --query "Render"
+py -3 harness.py inspect --query "Render"
 ```
 
 ### 2. Supercharging with App-AST Recipes
@@ -185,21 +185,21 @@ py -3 -m pytest
 ### CLI Reference
 ```powershell
 # Inspect active foreground window (<35ms)
-groundplane inspect
-groundplane inspect --query "Run"
+py -3 harness.py inspect
+py -3 harness.py inspect --query "Run"
 
 # Launch or focus an application via Shell COM Broker
-groundplane launch ltspice
+py -3 harness.py launch ltspice
 
 # Inspect App-AST profiles and registered states
-groundplane ast --app ltspice
+py -3 harness.py ast --app ltspice
 
 # Execute an App-AST verified recipe (add --record in dev mode for GIF visual proof)
-groundplane recipe ltspice open_schematic --params path=outputs/miller_ota.asc
-groundplane recipe ltspice run_simulation
+py -3 harness.py recipe ltspice open_schematic --params path=outputs/miller_ota.asc
+py -3 harness.py recipe ltspice run_simulation
 
 # Check disk vs GUI buffer synchronization
-groundplane sync outputs/miller_ota.asc --app ltspice
+py -3 harness.py sync outputs/miller_ota.asc --app ltspice
 ```
 
 ---

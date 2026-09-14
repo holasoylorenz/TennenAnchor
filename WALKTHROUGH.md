@@ -25,23 +25,26 @@ A complete, reproducible trace demonstrating how **GroundPlane** automates compl
                      +---------------------------------------+
                                          |
      Turn 1: app_query("ltspice")        |  Returns: 4 states, 3 verified recipes, domain hints
-     ──────────────────────────────────> |  [empty_workspace, schematic_open, waveform_active]
+     ─────────────────────────────────> |  [empty_workspace, schematic_open, waveform_active]
                                          |
      Turn 2: Synthesize Circuit ASC      |  Generates outputs/miller_ota.asc
-     ──────────────────────────────────> |  BufferSyncManager checks GUI memory (clean state)
+     ─────────────────────────────────> |  BufferSyncManager checks GUI memory (clean state)
                                          |
      Turn 3: app_execute_recipe(...)     |  Pins HWND 526698 -> Focus Invariant Guard
      [open_schematic(path=...)]          |  Executes Ctrl+W (discard) -> Ctrl+O -> path -> Enter
-     ──────────────────────────────────> |  State Transition: empty_workspace -> schematic_open (1.8s)
+     ─────────────────────────────────> |  State Transition: empty_workspace -> schematic_open (1.8s)
                                          |
      Turn 4: app_execute_recipe(...)     |  Asserts focus on HWND 526698 -> Clicks Run (#7)
      [run_simulation()]                  |  State Transition: schematic_open -> waveform_active (0.9s)
-     ──────────────────────────────────> |  Channel B extracts: A0 = 64.35 dB, GBW = 10.0 MHz
+     ─────────────────────────────────> |  Channel B extracts: A0 = 64.35 dB, GBW = 10.0 MHz
                                          |
      Turn 5: Dynamic Parameter Retuning  |  Rewrites Cc on disk (7.0pF -> 2.8pF)
-     ──────────────────────────────────> |  BufferSync detects dirty state -> enforces tab reload
-                                         |  Re-runs simulation in 2.4s -> GBW = 25.0 MHz (41.5% speedup)
+     ─────────────────────────────────> |  BufferSync detects dirty state -> enforces tab reload
+                                         |  Re-runs simulation in 2.4s (vs 4.1s cold start) -> GBW = 25.0 MHz
 ```
+
+> **Note**: This is a representative trace illustrating the execution flow. The SPICE metrics ($A_0$, $GBW$, timing) are from a real simulation run; re-run times will vary by machine and LTspice cache state.
+
 
 ---
 
@@ -199,7 +202,7 @@ Pinned HWND: 526698
 1. Agent updates `outputs/miller_ota.asc` on disk.
 2. `BufferSyncManager` detects that `miller_ota.asc` is currently displayed in HWND `526698`, but the disk hash has changed (`Dirty on disk: True`).
 3. Reload Strategy: Computes `discard_buffer_then_open` and dispatches `Ctrl+W` before reloading.
-4. Simulation completes in **2.4s** (vs 4.1s initial warm-up, a **41.5% speedup**).
+   4. Simulation completes in **2.4s** (vs. 4.1s on the initial cold run — SPICE solver benefits from a warm cache on subsequent runs; actual speedup will vary by circuit complexity and machine).
 5. Channel B extracts verified updated metrics:
    - $A_0 = 64.35\text{ dB}$
    - $GBW = 25.12\text{ MHz}$ (Target: 25.0 MHz)

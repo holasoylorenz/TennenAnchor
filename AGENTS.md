@@ -12,7 +12,7 @@ All commands assume Windows 10/11 with Python 3.10+ and Per-Monitor v2 DPI aware
 # 0. One-time setup (install dependencies in editable mode)
 py -3 -m pip install -e .
 
-# 1. Run unit test suite (fast verification, 47 tests, ~5s)
+# 1. Run unit test suite (fast verification, 48 tests, ~5s)
 py -3 -m pytest
 
 # 2. Inspect active foreground window (Tier 1 UIA, <35ms)

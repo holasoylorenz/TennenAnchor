@@ -53,10 +53,17 @@ class PlaybookRunner:
         self.dual_observer = dual_observer or DualChannelObserver(parser=self.parser)
 
     def _interpolate(self, template: str, params: Dict[str, Any]) -> str:
-        """Replaces {param} placeholders in strings."""
+        """Replaces {param} placeholders in strings, normalizing file paths on Windows."""
+        import os
         result = template
         for k, v in params.items():
-            result = result.replace(f"{{{k}}}", str(v))
+            val_str = str(v)
+            if os.name == "nt" and ("/" in val_str or "\\" in val_str or k in ("path", "file")):
+                try:
+                    val_str = os.path.normpath(val_str)
+                except Exception:
+                    pass
+            result = result.replace(f"{{{k}}}", val_str)
         return result
 
     def execute(

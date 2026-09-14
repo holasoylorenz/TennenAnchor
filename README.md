@@ -6,13 +6,13 @@ Closed-loop, state-verified Windows automation runtime for AI agents — from ED
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-0078D6.svg)](https://microsoft.com/windows)
 [![MCP Protocol](https://img.shields.io/badge/MCP-JSON--RPC%202.0-8A2BE2.svg)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-47%20passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-48%20passed-brightgreen.svg)](tests/)
 
 ---
 
-![GroundPlane Autonomous Circuit Optimization Demo](assets/demo.gif)
+![GroundPlane Autonomous Hierarchical Circuit Demo](assets/demo.gif)
 
-*The Boss-Fight Stress Test: Autonomous closed-loop design and verification of a Two-Stage CMOS Miller OTA in LTspice — synthesizing schematic geometry, running AC analysis, plotting frequency response, and verifying bandwidth metrics ($A_0 = 91.73\text{ dB}$, $GBW = 36.97\text{ MHz}$) against the simulation log.*
+*The Ultimate Analog Demonstration: Autonomous multi-sheet hierarchical design and verification of a Class-D Audio Power Amplifier with a Switch-Mode Power Supply (SMPS) in LTspice. Every sub-circuit schematic, custom block symbol, and top-level coordinator was **generated entirely on the fly** on a strict 16-pixel grid before launching. GroundPlane attaches to LTspice, iterates through the generated sub-block sheets (`smps_buck.asc`, `carrier_gen.asc`, `pwm_modulator.asc`, `power_stage.asc`) to showcase internal topologies, opens the interconnected top-level coordinator (`top_class_d.asc`), executes transient simulation in 1.7s, plots the demodulated audio and switching waveforms, and validates ground-truth metrics ($5.00\text{V}$ SMPS regulation with $24\text{mV}$ ripple, $1.0\text{W RMS}$ clean audio delivery into $8\Omega$) against the simulation log.*
 
 ---
 

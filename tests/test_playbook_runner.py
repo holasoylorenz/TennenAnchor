@@ -64,7 +64,9 @@ def test_playbook_runner_successful_execution(tmp_path: Path):
 
     # Verify controller calls pinned to HWND
     mock_controller.hotkey.assert_called_once_with(["ctrl", "o"], target_hwnd=12345)
-    mock_controller.type_text.assert_called_once_with("C:/test/circuit.asc", press_enter=True, target_hwnd=12345)
+    import os
+    expected_path = os.path.normpath("C:/test/circuit.asc")
+    mock_controller.type_text.assert_called_once_with(expected_path, press_enter=True, target_hwnd=12345)
 
 
 def test_playbook_runner_failure_captures_friction(tmp_path: Path):

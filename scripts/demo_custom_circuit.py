@@ -192,8 +192,8 @@ def run_demo():
     import re
     if output_log.exists():
         log_text = output_log.read_text(encoding="utf-8", errors="ignore")
-        print("\n=======================================================")
-        print("          GROUNDPLANE DUAL-CHANNEL VERIFICATION        ")
+        print("=======================================================")
+        print("         TENNENANCHOR DUAL-CHANNEL VERIFICATION        ")
         print("=======================================================")
         for line in log_text.splitlines():
             if "midband" in line.lower() or "gain" in line.lower() or "phase" in line.lower():

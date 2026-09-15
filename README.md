@@ -1,6 +1,6 @@
-# GroundPlane
+# TennenAnchor
 
-Closed-loop, state-verified Windows automation runtime for AI agents — built on EDA and CAD, targeting native desktop applications where accessibility crawlers fall short.
+Closed-loop, state-verified Windows Computer-Use Runtime & MCP Server for AI agents — built on EDA and CAD, targeting native desktop applications where accessibility crawlers fall short.
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-0078D6.svg)](https://microsoft.com/windows)
@@ -10,19 +10,19 @@ Closed-loop, state-verified Windows automation runtime for AI agents — built o
 
 ---
 
-![GroundPlane Autonomous Hierarchical Circuit Demo](assets/demo.gif)
+![TennenAnchor Autonomous Hierarchical Circuit Demo](assets/demo.gif)
 
-*All 9 files — four sub-circuit schematics, four custom block symbols, and the top-level coordinator — were **generated entirely on the fly**. GroundPlane then attached to LTspice, navigated each sub-block sheet, ran transient simulation in 1.7 s, and validated SMPS regulation ($5.00\text{ V}$, $24\text{ mV}$ ripple) and audio output ($1.0\text{ W RMS}$ into $8\,\Omega$) against the simulation log.*
+*All 9 files — four sub-circuit schematics, four custom block symbols, and the top-level coordinator — were **generated entirely on the fly**. TennenAnchor then attached to LTspice, navigated each sub-block sheet, ran transient simulation in 1.7 s, and validated SMPS regulation ($5.00\text{ V}$, $24\text{ mV}$ ripple) and audio output ($1.0\text{ W RMS}$ into $8\,\Omega$) against the simulation log.*
 
 ---
 
-## Why "GroundPlane"?
+## Why "TennenAnchor"?
 
-In analog and RF electronics, a **ground plane** provides an equipotential, noise-free reference plane across the entire PCB, preventing ground loops, signal drift, and stray interference.
+The project is named **TennenAnchor** — inspired by the author's home region of **Tennengau** (Salzburg, Austria) and **Anchor** because this system is built to firmly stabilize and anchor the LLM when it takes over your desktop.
 
-In computer-use agents, **GroundPlane** plays the exact same role: it is the reference foundation that grounds desktop AI agents, preventing coordinate drift, context exhaustion, and blind open-loop clicking.
+In computer-use agents, **TennenAnchor** serves as the steadfast anchor that prevents coordinate drift, context exhaustion, and blind open-loop clicking. Much like how a physical anchor secures a vessel against turbulent currents (and an electrical ground plane provides a noise-free reference plane across a PCB), TennenAnchor firmly anchors desktop AI agents to deterministic, verified state.
 
-Built first and foremost as a high-speed personal power tool for desktop experimentation, GroundPlane was forged on an electrical engineer's desktop automating the hardest native software around: **LTspice** — custom GPU/DirectX viewports, zero accessibility nodes on schematics, modal dialog traps, and out-of-sync working buffers. That class of software is where DOM crawlers and screenshot agents fail silently.
+Built first and foremost as a high-speed personal power tool for desktop experimentation, TennenAnchor was forged on an electrical engineer's desktop automating the hardest native software around: **LTspice** — custom GPU/DirectX viewports, zero accessibility nodes on schematics, modal dialog traps, and out-of-sync working buffers. That class of software is where DOM crawlers and screenshot agents fail silently.
 
 ---
 
@@ -39,13 +39,13 @@ When automating native desktop software (EDA, CAD, Blender, audio DAWs, legacy W
 - **Custom Viewport Blindness**: Schematic surfaces, 3D viewports, and DirectX canvases have zero accessibility nodes, causing accessibility-only crawlers to fail silently.
 - **Stale Working Buffer Traps**: Native desktop applications do not automatically reload files edited on disk if an in-memory document tab is open. Re-running simulations or builds silently runs stale code.
 
-**GroundPlane** replaces open-loop clicking with **state-verified, closed-loop transitions**: observe active state, assert preconditions, execute pinned macro recipes, and verify postconditions against ground-truth artifacts.
+**TennenAnchor** replaces open-loop clicking with **state-verified, closed-loop transitions**: observe active state, assert preconditions, execute pinned macro recipes, and verify postconditions against ground-truth artifacts.
 
 ---
 
 ## Architecture
 
-Following the gateway and decoupled adapter architecture found in modern agent infrastructure like **OpenClaw**, GroundPlane isolates protocol communication from execution and domain synthesis:
+Following the gateway and decoupled adapter architecture found in modern agent infrastructure like **OpenClaw**, TennenAnchor isolates protocol communication from execution and domain synthesis:
 
 ```
 +-------------------------------------------------------------------------+
@@ -107,10 +107,10 @@ Task completion is verified through two independent channels:
 
 ## Extending to Other Applications
 
-GroundPlane is not limited to LTspice or Word. The same runtime can target other native Windows desktop applications in two ways:
+TennenAnchor is not limited to LTspice or Word. The same runtime can target other native Windows desktop applications in two ways:
 
 ### 1. Active Window Control (No Profile Required)
-Use the generic MCP tools (`desktop_inspect`, `desktop_step`, `desktop_act`) or CLI commands. GroundPlane inspects whatever window is currently in the foreground:
+Use the generic MCP tools (`desktop_inspect`, `desktop_step`, `desktop_act`) or CLI commands. TennenAnchor inspects whatever window is currently in the foreground:
 ```powershell
 # Inspect controls of whatever window is active right now (<35ms)
 py -3 harness.py inspect
@@ -154,8 +154,8 @@ Measured on Windows 11 with Per-Monitor v2 DPI awareness ($N=25$ iterations):
 | :--- | :--- | :--- | :--- |
 | **Raw Accessibility Tree** | ~450 ms | ~3,200 tokens | 48,000 tokens |
 | **Vision (Full Screenshot)** | ~2,200 ms | ~700 tokens | 10,500 tokens |
-| **GroundPlane (Tier 1 UIA)** | **29.6 ms** | **~73 tokens** | **1,050 tokens** |
-| **GroundPlane (App-AST Recipe)** | **< 2.5 ms** | **~35 tokens** | **70 tokens (-99.9%)** |
+| **TennenAnchor (Tier 1 UIA)** | **29.6 ms** | **~73 tokens** | **1,050 tokens** |
+| **TennenAnchor (App-AST Recipe)** | **< 2.5 ms** | **~35 tokens** | **70 tokens (-99.9%)** |
 
 *Detailed statistical distributions, percentiles, and token accounting are documented in [BENCHMARK.md](BENCHMARK.md).*
 
@@ -166,8 +166,8 @@ Measured on Windows 11 with Per-Monitor v2 DPI awareness ($N=25$ iterations):
 ### Installation
 ```powershell
 # Clone repository
-git clone https://github.com/holasoylorenz/groundplane.git
-cd groundplane
+git clone https://github.com/holasoylorenz/tennenanchor.git
+cd tennenanchor
 
 # Standard installation (lean agent runtime)
 py -3 -m pip install -e .
@@ -205,16 +205,16 @@ py -3 harness.py sync outputs/miller_ota.asc --app ltspice
 
 ## MCP Server Configuration
 
-Connect GroundPlane to Claude Desktop, Cursor, or Antigravity CLI via stdio JSON-RPC 2.0:
+Connect TennenAnchor to Claude Desktop, Cursor, or Antigravity CLI via stdio JSON-RPC 2.0:
 
 ```json
 {
   "mcpServers": {
-    "groundplane": {
+    "tennenanchor": {
       "command": "py",
       "args": [
         "-3",
-        "C:\\path\\to\\groundplane\\mcp_server.py"
+        "C:\\path\\to\\tennenanchor\\mcp_server.py"
       ]
     }
   }

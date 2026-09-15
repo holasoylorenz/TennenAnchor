@@ -1,5 +1,5 @@
 """
-Circuit Schematic Layout & Synthesis Engine for GroundPlane.
+Circuit Schematic Layout & Synthesis Engine for TennenAnchor.
 
 Generates human-grade, aesthetically arranged, grid-aligned LTspice (.asc) schematics:
 - Orthogonal power rails (VDD bus at top, Ground at bottom)

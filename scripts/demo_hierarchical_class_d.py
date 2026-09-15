@@ -1,7 +1,7 @@
 """
 Master Demonstration: Hierarchical Class-D Audio Amplifier & SMPS System.
 
-Showcases GroundPlane operating autonomously across a complex, multi-sheet,
+Showcases TennenAnchor operating autonomously across a complex, multi-sheet,
 compartmentalized pure analog architecture:
 1. Block 1: smps_buck.asc (12V raw input -> 5.0V regulated DC power bus)
 2. Block 2: carrier_gen.asc (250kHz pure analog linear triangle carrier + 1kHz audio test tone)

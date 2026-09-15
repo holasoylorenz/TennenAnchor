@@ -1,5 +1,5 @@
 """
-Session Video & Animated GIF Recorder for GroundPlane.
+Session Video & Animated GIF Recorder for TennenAnchor.
 Captures window-scoped screen frames during recipe execution,
 stamps real-time telemetry HUD overlays, and compiles optimized animated GIFs
 for visual proof and regression testing.
@@ -19,7 +19,7 @@ from PIL import Image, ImageDraw
 
 from core.dpi import get_screen_metrics, ensure_interactive_desktop
 
-logger = logging.getLogger("groundplane.recorder")
+logger = logging.getLogger("tennenanchor.recorder")
 user32 = ctypes.windll.user32
 
 DEFAULT_RECORDINGS_DIR = Path(__file__).resolve().parent.parent / "outputs" / "recordings"
@@ -205,7 +205,7 @@ class WindowScopedRecorder:
             draw.rectangle([(6, banner_top + 5), (14, banner_top + 18)], fill=(0, 230, 160))
 
             # Telemetry text
-            hud_text = f"GroundPlane | {status_text}"
+            hud_text = f"TennenAnchor | {status_text}"
             draw.text((20, banner_top + 4), hud_text, fill=(240, 245, 255))
 
             # Convert to adaptive palette mode for compact GIF size

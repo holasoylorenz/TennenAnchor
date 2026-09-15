@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "groundplane"
+name = "tennenanchor"
 version = "1.2.0"
-description = "Closed-loop, state-verified Windows automation runtime for AI agents — from EDA and CAD to any desktop application."
+description = "Closed-loop, state-verified Windows Computer-Use Runtime & MCP Server for AI agents — from EDA and CAD to any desktop application."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
@@ -13,7 +13,7 @@ authors = [
 ]
 requires-python = ">=3.10"
 keywords = [
-    "groundplane",
+    "tennenanchor",
     "desktop-automation",
     "computer-use",
     "windows-automation",
@@ -56,13 +56,13 @@ recording = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/holasoylorenz/groundplane"
-Documentation = "https://github.com/holasoylorenz/groundplane#readme"
-Repository = "https://github.com/holasoylorenz/groundplane.git"
-Issues = "https://github.com/holasoylorenz/groundplane/issues"
+Homepage = "https://github.com/holasoylorenz/tennenanchor"
+Documentation = "https://github.com/holasoylorenz/tennenanchor#readme"
+Repository = "https://github.com/holasoylorenz/tennenanchor.git"
+Issues = "https://github.com/holasoylorenz/tennenanchor/issues"
 
 [project.scripts]
-groundplane = "harness:main"
+tennenanchor = "harness:main"
 desktop-harness = "harness:main"
 
 [tool.setuptools]

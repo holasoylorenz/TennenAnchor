@@ -37,9 +37,9 @@ Calculated across active application windows (e.g. LTspice, Word):
 | :--- | :--- | :--- | :--- |
 | **Baseline A: Raw Accessibility Tree** | ~12–18 KB | ~3,200 tokens | Unfiltered recursive XML / JSON tree dump |
 | **Baseline B: Multimodal Screenshot** | ~180 KB | ~700 tokens | Downscaled image patch (Gemini / Claude tile budget) |
-| **GroundPlane: Tier 1 UIA (Full)** | ~380 B | **~73 tokens** | Filtered interactive controls (#ID, Type, Label, Coords) |
-| **GroundPlane: Tier 1 UIA (Delta)** | ~70 B | **~22 tokens** | Unchanged HWND delta summary |
-| **GroundPlane: App-AST Macro Recipe** | ~140 B | **~35 tokens** | State-verified pinned transaction |
+| **TennenAnchor: Tier 1 UIA (Full)** | ~380 B | **~73 tokens** | Filtered interactive controls (#ID, Type, Label, Coords) |
+| **TennenAnchor: Tier 1 UIA (Delta)** | ~70 B | **~22 tokens** | Unchanged HWND delta summary |
+| **TennenAnchor: App-AST Macro Recipe** | ~140 B | **~35 tokens** | State-verified pinned transaction |
 
 ---
 
@@ -51,8 +51,8 @@ Simulated workload: Multi-step engineering workflow (e.g. open schematic $\to$ c
 | :--- | :--- | :--- | :--- |
 | **Baseline A (Raw UIA Dumps)** | 48,000 tokens | *Baseline* | 15 turns |
 | **Baseline B (Visual Screenshots)** | 10,500 tokens | *Baseline Vision* | 15 turns |
-| **GroundPlane: Tier 1 Delta Compression** | **381 tokens** | **96.4% reduction** | 15 turns |
-| **GroundPlane: App-AST Recipe Execution** | **70 tokens** | **99.9% reduction** | **2 turns** |
+| **TennenAnchor: Tier 1 Delta Compression** | **381 tokens** | **96.4% reduction** | 15 turns |
+| **TennenAnchor: App-AST Recipe Execution** | **70 tokens** | **99.9% reduction** | **2 turns** |
 
 ---
 

@@ -1,6 +1,6 @@
 # End-to-End Walkthrough: Autonomous Circuit Simulation & Parameter Re-Tuning
 
-A complete, reproducible trace demonstrating how **GroundPlane** automates complex native desktop engineering software (**LTspice**) through App-AST macro transactions, working buffer synchronization, and dual-channel verification.
+A complete, reproducible trace demonstrating how **TennenAnchor** automates complex native desktop engineering software (**LTspice**) through App-AST macro transactions, working buffer synchronization, and dual-channel verification.
 
 ---
 
@@ -132,7 +132,7 @@ Reason       : Document 'miller_ota.asc' is not currently active; direct open is
 }
 ```
 
-**Execution Pipeline Inside GroundPlane**:
+**Execution Pipeline Inside TennenAnchor**:
 1. `AppLifecycleBroker`: Resolves `LTspice.exe` and pins target HWND `526698`.
 2. `BufferSyncManager`: Checks if `miller_ota.asc` is already open. If open, triggers `Ctrl+W` tab discard.
 3. `Focus Invariant Guard`: Asserts `user32.GetForegroundWindow() == 526698`.
@@ -210,9 +210,9 @@ Pinned HWND: 526698
 
 ---
 
-## 3. Comparison: Generic Computer-Use vs. GroundPlane
+## 3. Comparison: Generic Computer-Use vs. TennenAnchor
 
-| Dimension | Generic Computer-Use (Vision-Only) | Naive Accessibility (Raw UIA) | GroundPlane Runtime |
+| Dimension | Generic Computer-Use (Vision-Only) | Naive Accessibility (Raw UIA) | TennenAnchor Runtime |
 | :--- | :--- | :--- | :--- |
 | **Turns per Run** | 12–18 conversational turns | 8–12 turns | **2 turns** |
 | **Token Consumption** | ~10,500 tokens (1280px tiles) | ~48,000 tokens (XML dump) | **~75 tokens (99.9% reduction)** |
@@ -228,7 +228,7 @@ Pinned HWND: 526698
 Run the automated parametric experiment locally:
 
 ```powershell
-# 1. Install GroundPlane dependencies
+# 1. Install TennenAnchor dependencies
 py -3 -m pip install -e .
 
 # 2. Run the complete Miller OTA parameter experiment

@@ -1,5 +1,5 @@
 """
-GroundPlane CLI — Closed-loop execution and verification runtime for Windows agents.
+TennenAnchor CLI — Closed-loop execution and verification runtime for Windows agents.
 Allows inspecting the screen, testing actuation, querying App-AST profiles,
 reviewing the friction ledger, and executing multi-step verified recipes directly from the CLI.
 """
@@ -22,7 +22,7 @@ from perception.edge_parser import EdgeUIAParser
 from perception.screenshot_escalator import ScreenshotEscalator
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
-logger = logging.getLogger("desktop_harness")
+logger = logging.getLogger("tennenanchor.cli")
 
 
 def cmd_inspect(args: argparse.Namespace) -> None:
@@ -87,8 +87,8 @@ def cmd_benchmark(args: argparse.Namespace) -> None:
     print("\n15-Step Context Footprint Simulation:")
     print(f"  - Baseline A (Raw UIA Tree) : {raw_15:>7,d} tokens")
     print(f"  - Baseline B (Screenshots)  : {vis_15:>7,d} tokens")
-    print(f"  - Harness (Tier 1 Delta)    : {delta_15:>7,d} tokens ({red_vis}% reduction)")
-    print(f"  - Harness (App-AST Recipe)  : {recipe_15:>7,d} tokens ({red_raw}% reduction, 2 turns)")
+    print(f"  - TennenAnchor (Tier 1 Delta) : {delta_15:>7,d} tokens ({red_vis}% reduction)")
+    print(f"  - TennenAnchor (App-AST Recipe): {recipe_15:>7,d} tokens ({red_raw}% reduction, 2 turns)")
     print("-" * 56)
 
     if not getattr(args, "no_save", False):
@@ -230,7 +230,7 @@ def cmd_sync(args: argparse.Namespace) -> None:
 
 def main() -> None:
     init_dpi_awareness()
-    parser = argparse.ArgumentParser(description="Desktop Control Harness CLI")
+    parser = argparse.ArgumentParser(description="TennenAnchor CLI — Windows Computer-Use Runtime & Tool Broker")
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
     # Inspect

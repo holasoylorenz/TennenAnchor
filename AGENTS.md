@@ -1,6 +1,6 @@
-# AGENTS.md — GroundPlane Agent Guide
+# AGENTS.md — TennenAnchor Agent Guide
 
-Operational runtime guidance for AI computer-use agents (Claude Code, Antigravity CLI, Cursor, OpenAI) interacting with Windows desktop and EDA applications via GroundPlane.
+Operational runtime guidance for AI computer-use agents (Claude Code, Antigravity CLI, Cursor, OpenAI) interacting with Windows desktop and EDA applications via TennenAnchor.
 
 ---
 
@@ -72,9 +72,9 @@ It communicates over **stdio JSON-RPC 2.0** with strict stream isolation:
 ```json
 {
   "mcpServers": {
-    "groundplane": {
+    "tennenanchor": {
       "command": "py",
-      "args": ["-3", "C:\\path\\to\\groundplane\\mcp_server.py"]
+      "args": ["-3", "C:\\path\\to\\tennenanchor\\mcp_server.py"]
     }
   }
 }
@@ -102,9 +102,9 @@ Do not manually click through dialogs or menus when an App-AST recipe exists.
 - **Good**: `app_execute_recipe(app="ltspice", recipe="open_schematic", params={"path": "..."})` (1 turn, ~35 tokens).
 
 ### Rule 2: Application Lifecycle & Launch Strategy
-GroundPlane manages target desktop applications seamlessly:
-- **Cold-Start Launching**: If an application is not running, GroundPlane uses the native interactive Windows Searchbar sequence (`Win` key $\to$ types app name $\to$ `Enter`). This operates within the user's interactive desktop shell, bypassing console isolation traps, and launches the application in <1 second.
-- **Existing Instances**: If the application is already open, GroundPlane discovers its HWND via ctypes enumeration, un-minimizes it, asserts focus, and executes closed-loop macro recipes automatically.
+TennenAnchor manages target desktop applications seamlessly:
+- **Cold-Start Launching**: If an application is not running, TennenAnchor uses the native interactive Windows Searchbar sequence (`Win` key $\to$ types app name $\to$ `Enter`). This operates within the user's interactive desktop shell, bypassing console isolation traps, and launches the application in <1 second.
+- **Existing Instances**: If the application is already open, TennenAnchor discovers its HWND via ctypes enumeration, un-minimizes it, asserts focus, and executes closed-loop macro recipes automatically.
 - **Recipe Integration**: All recipes (`app_execute_recipe`) automatically ensure the target application is running and focused before executing steps.
 
 ### Rule 3: Working Buffer Synchronization (Disk vs GUI)

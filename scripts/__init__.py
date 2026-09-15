@@ -1,1 +1,1 @@
-"""Benchmark and evaluation scripts for GroundPlane."""
+"""Benchmark and evaluation scripts for TennenAnchor."""

@@ -1,7 +1,7 @@
-# GroundPlane — Full Agent Specification
+# TennenAnchor — Full Agent Specification
 
 ## 1. Overview
-GroundPlane is a closed-loop execution and verification runtime designed for AI agents operating on Windows 10/11 desktops. It interfaces directly with native Win32 controls, UI Automation (UIA), and Per-Monitor v2 DPI APIs to eliminate the latency, token exhaustion, and drift associated with open-loop screenshot-and-coordinate clicking. Born on an electrical engineer's desktop to conquer LTspice, it is fully universal and controls any desktop application.
+TennenAnchor is a closed-loop Windows Computer-Use Runtime & MCP Server designed for AI agents operating on Windows 10/11 desktops. It interfaces directly with native Win32 controls, UI Automation (UIA), and Per-Monitor v2 DPI APIs to eliminate the latency, token exhaustion, and drift associated with open-loop screenshot-and-coordinate clicking. Born on an electrical engineer's desktop to conquer LTspice, it is fully universal and controls any desktop application.
 
 ## 2. Invariants & Rules
 1. **Rule of Verified Recipes**: When an App-AST verified recipe exists, execute it rather than planning raw mouse clicks. Reduces turns from ~15 to 1 and tokens from ~10,000 to ~35.

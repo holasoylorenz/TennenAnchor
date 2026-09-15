@@ -23,12 +23,12 @@ from ctypes import wintypes
 user32 = ctypes.windll.user32
 user32.GetForegroundWindow.restype = wintypes.HWND
 
-logger = logging.getLogger("groundplane.playbook_runner")
+logger = logging.getLogger("tennenanchor.playbook_runner")
 
 
 class PlaybookRunner:
     """
-    GroundPlane Pinned Transaction Runner.
+    TennenAnchor Pinned Transaction Runner.
     Executes verified macro recipes from AppProfile graphs with
     managed lifecycle attachment, buffer synchronization, focus pinning,
     and dual-channel artifact verification.

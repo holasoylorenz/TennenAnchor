@@ -1,6 +1,6 @@
-# GroundPlane
+# TennenAnchor
 
-> Closed-loop, state-verified Windows automation runtime for AI agents — from EDA and CAD to any desktop application. Combines lightweight Win32/UIA perception (<35ms), application state machines (App-AST), working buffer synchronization, and closed-loop verification.
+> Closed-loop, state-verified Windows Computer-Use Runtime & MCP Server for AI agents — from EDA and CAD to any desktop application. Combines lightweight Win32/UIA perception (<35ms), application state machines (App-AST), working buffer synchronization, and closed-loop verification.
 
 ## Core Capabilities
 - **Dual-Tier Perception**: Walks native Windows UI accessibility trees in <35ms (~70 tokens), with automatic 1280px Lanczos vision fallback for custom viewports and EDA canvases.
@@ -13,7 +13,7 @@
 
 ## Quickstart
 ```powershell
-# Install GroundPlane in editable mode
+# Install TennenAnchor in editable mode
 py -3 -m pip install -e .
 
 # Developer mode with visual recording tools
@@ -42,7 +42,7 @@ py -3 harness.py recipe ltspice run_simulation
 ## Key Files & References
 - `AGENTS.md`: Operational runtime guide, focus invariants, and CLI-to-MCP translations for AI agents.
 - `mcp_server.py`: Stdio JSON-RPC 2.0 MCP server entry point.
-- `harness.py`: Interactive CLI broker for testing and automation (`groundplane` entry point).
+- `harness.py`: Interactive CLI broker for testing and automation (`tennenanchor` entry point).
 - `core/circuit_builder.py`: Human-grade schematic layout engine for analog IC synthesis in LTspice.
 - `BENCHMARK.md`: Empirical latency and token accounting benchmarks (N=25).
 - `WALKTHROUGH.md`: Turn-by-turn trace of autonomous analog circuit optimization.

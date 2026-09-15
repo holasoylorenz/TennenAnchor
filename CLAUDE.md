@@ -1,4 +1,4 @@
-# CLAUDE.md — GroundPlane Agent Guide
+# CLAUDE.md — TennenAnchor Agent Guide
 
 See [AGENTS.md](AGENTS.md) for full architectural guidelines, invariants, and App-AST references.
 

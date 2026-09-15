@@ -1,5 +1,5 @@
 """
-Hierarchical Class-D Audio Power System Generator for LTspice & GroundPlane.
+Hierarchical Class-D Audio Power System Generator for LTspice & TennenAnchor.
 
 Synthesizes a 4-block modular, compartmentalized analog architecture:
 1. smps_buck.asc/.asy: Switch-Mode Buck Power Supply (12V DC -> 5V DC regulated)

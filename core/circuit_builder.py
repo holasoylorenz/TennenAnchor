@@ -95,17 +95,20 @@ class LTspiceSchematic:
     Enforces 16-pixel grid alignment, collision checks, and clean routing.
     """
 
-    def __init__(self, sheet_width: int = 1400, sheet_height: int = 1000) -> None:
+    def __init__(self, sheet_width: int = 1400, sheet_height: int = 1000, grid_size: int = 16) -> None:
         self.sheet_width = sheet_width
         self.sheet_height = sheet_height
+        self.grid_size = grid_size
         self.wires: List[Wire] = []
         self.flags: List[Flag] = []
         self.symbols: List[Symbol] = []
         self.directives: List[Directive] = []
 
     def _snap(self, coord: int) -> int:
-        """Snaps coordinate to the standard 16-pixel LTspice grid."""
-        return round(coord / 16.0) * 16
+        """Snaps coordinate to the configured grid (default 16-pixel)."""
+        if self.grid_size <= 1:
+            return coord
+        return round(coord / float(self.grid_size)) * self.grid_size
 
     def add_wire(self, x1: int, y1: int, x2: int, y2: int) -> LTspiceSchematic:
         sx1, sy1, sx2, sy2 = self._snap(x1), self._snap(y1), self._snap(x2), self._snap(y2)
@@ -451,3 +454,99 @@ def build_small_signal_miller_schematic(
     sch.add_directive_block(start_x=80, start_y=560, lines=directives, line_height=32)
 
     return sch
+
+
+def build_buck_boost_schematic(
+    vin_v: float = 12.0,
+    duty_cycle: float = 0.50,
+    f_sw_khz: float = 100.0,
+    l_uh: float = 100.0,
+    c_uf: float = 47.0,
+    r_load_ohm: float = 20.0,
+    t_sim_ms: float = 2.0,
+) -> LTspiceSchematic:
+    """
+    Synthesizes an Inverting Buck-Boost Converter schematic for LTspice.
+
+    Continuous Conduction Mode (CCM) Transfer Function:
+      Vout = -Vin * (D / (1 - D))
+      - For Vin=12V, D=0.50 -> Vout = -12.0V
+      - For Vin=12V, D=0.33 -> Vout = -5.9V (Buck Mode)
+      - For Vin=12V, D=0.67 -> Vout = -24.4V (Boost Mode)
+    """
+    sch = LTspiceSchematic(sheet_width=1200, sheet_height=800, grid_size=8)
+
+    # Calculate switching PWM timing
+    t_period_s = 1.0 / (f_sw_khz * 1e3)
+    t_on_s = duty_cycle * t_period_s
+    t_period_us = t_period_s * 1e6
+    t_on_us = t_on_s * 1e6
+
+    # 1. DC Input Power Source (Vin)
+    sch.add_symbol("voltage", 128, 240, "R0", inst_name="Vin", value=f"{vin_v:.1f}")
+    sch.add_wire(128, 200, 352, 200)  # VIN bus connecting to S1
+    sch.add_wire(128, 200, 128, 256)
+    sch.add_wire(128, 336, 128, 368)
+    sch.add_flag(128, 200, "VIN")
+    sch.add_flag(128, 368, "0")
+
+    # 2. Gate Pulse Generator (Vgate)
+    sch.add_symbol(
+        "voltage",
+        224,
+        384,
+        "R0",
+        inst_name="Vgate",
+        value=f"PULSE(0 5 0 10n 10n {t_on_us:.2f}u {t_period_us:.2f}u)",
+    )
+    sch.add_wire(224, 384, 224, 400)
+    sch.add_wire(224, 400, 304, 400)
+    sch.add_wire(304, 400, 304, 264)
+    sch.add_wire(304, 216, 288, 216)
+    sch.add_wire(224, 480, 224, 512)
+    sch.add_flag(224, 512, "0")
+    sch.add_flag(288, 216, "0")
+
+    # 3. Controlled Power Switch (S1)
+    sch.add_symbol("sw", 352, 184, "R0", inst_name="S1", value="MYSW")
+
+    # 4. Storage Inductor (L1) - connected between SW node and Ground
+    sch.add_symbol("ind", 336, 320, "R0", inst_name="L1", value=f"{l_uh:.0f}u")
+    sch.add_wire(352, 280, 352, 336)
+    sch.add_wire(352, 416, 352, 448)
+    sch.add_flag(352, 280, "SW")
+    sch.add_flag(352, 448, "0")
+
+    # 5. Fast Freewheeling Diode (D1)
+    sch.add_wire(352, 280, 448, 280)
+    sch.add_symbol("diode", 512, 264, "R90", inst_name="D1", value="1N5819")
+    sch.add_wire(512, 280, 640, 280)
+
+    # 6. Filter Capacitor (C1) & Resistive Load (Rload)
+    sch.add_symbol("cap", 624, 280, "R0", inst_name="C1", value=f"{c_uf:.0f}u")
+    sch.add_wire(640, 344, 640, 384)
+    sch.add_flag(640, 384, "0")
+
+    sch.add_wire(640, 280, 736, 280)
+    sch.add_symbol("res", 720, 264, "R0", inst_name="Rload", value=f"{r_load_ohm:.0f}")
+    sch.add_wire(736, 360, 736, 384)
+    sch.add_flag(736, 384, "0")
+    sch.add_flag(640, 280, "VOUT")
+
+    # 7. SPICE Directives & Measurements
+    v_target = -vin_v * (duty_cycle / (1.0 - duty_cycle))
+    t_meas_start = t_sim_ms * 0.75
+    directives = [
+        f";Inverting Buck-Boost Converter (Vin={vin_v}V, f={f_sw_khz}kHz, D={duty_cycle*100:.1f}%)",
+        f";Theoretical Output: Vout = -Vin*(D/(1-D)) = {v_target:.2f}V",
+        f".tran {t_sim_ms}m",
+        ".model MYSW SW(Ron=0.02 Roff=1Meg Vt=2.5 Vh=0.5)",
+        f".meas TRAN Vout_avg AVG V(VOUT) FROM {t_meas_start}m TO {t_sim_ms}m",
+        f".meas TRAN Vout_rip PP V(VOUT) FROM {t_meas_start}m TO {t_sim_ms}m",
+        f".meas TRAN IL_peak MAX I(L1) FROM {t_meas_start}m TO {t_sim_ms}m",
+        f".meas TRAN Iin_avg AVG -I(Vin) FROM {t_meas_start}m TO {t_sim_ms}m",
+    ]
+    sch.add_directive_block(start_x=128, start_y=560, lines=directives, line_height=40)
+
+    return sch
+

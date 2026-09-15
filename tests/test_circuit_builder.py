@@ -10,6 +10,7 @@ from core.circuit_builder import (
     LTspiceSchematic,
     build_cmos_miller_ota_schematic,
     build_small_signal_miller_schematic,
+    build_buck_boost_schematic,
 )
 
 
@@ -203,3 +204,30 @@ def test_cmos_and_small_signal_pin_connectivity():
                     f"Floating pin detected in {sch_name}: {sym.inst_name} ({sym.name}) "
                     f"at absolute ({abs_x}, {abs_y}) [offset ({px}, {py}), rot {sym.rotation}]"
                 )
+
+
+def test_buck_boost_synthesis():
+    """Verifies synthesis of inverting buck-boost converter schematic."""
+    sch = build_buck_boost_schematic(vin_v=12.0, duty_cycle=0.5, f_sw_khz=100.0, l_uh=100.0, c_uf=47.0, r_load_ohm=20.0)
+    asc_text = sch.build()
+
+    # Check key components
+    assert "SYMBOL voltage 128 240 R0" in asc_text
+    assert "SYMATTR InstName Vin" in asc_text
+    assert "SYMBOL sw 352 184 R0" in asc_text
+    assert "SYMATTR InstName S1" in asc_text
+    assert "SYMBOL ind 336 320 R0" in asc_text
+    assert "SYMATTR InstName L1" in asc_text
+    assert "SYMBOL diode 512 264 R90" in asc_text
+    assert "SYMATTR InstName D1" in asc_text
+    assert "SYMBOL cap 624 280 R0" in asc_text
+    assert "SYMATTR InstName C1" in asc_text
+    assert "SYMBOL res 720 264 R0" in asc_text
+    assert "SYMATTR InstName Rload" in asc_text
+
+    # Check SPICE directives
+    assert ".tran 2.0m" in asc_text or ".tran 2m" in asc_text
+    assert ".model MYSW SW(Ron=0.02 Roff=1Meg Vt=2.5 Vh=0.5)" in asc_text
+    assert "Vout_avg" in asc_text
+    assert "Vout_rip" in asc_text
+

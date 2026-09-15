@@ -286,7 +286,7 @@ class PlaybookRunner:
             if res.get("status") != "ok":
                 raise RuntimeError(res.get("error", "Click failed"))
 
-        elif action == "type_text":
+        elif action in ("type_text", "type"):
             raw_text = step.text or ""
             text = self._interpolate(raw_text, params)
             res = self.controller.type_text(text, press_enter=step.press_enter, target_hwnd=hwnd)
@@ -294,9 +294,10 @@ class PlaybookRunner:
                 raise RuntimeError(res.get("error", "Type failed"))
 
         elif action == "press_key":
-            if not step.target:
+            target_key = step.target or getattr(step, "key", None)
+            if not target_key:
                 raise ValueError("press_key step missing 'target' key name")
-            key = self._interpolate(step.target, params)
+            key = self._interpolate(target_key, params)
             res = self.controller.press_key(key)
             if res.get("status") != "ok":
                 raise RuntimeError(res.get("error", "Key press failed"))

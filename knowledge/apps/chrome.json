@@ -1,0 +1,88 @@
+{
+  "app_id": "chrome",
+  "name": "Google Chrome",
+  "executable_patterns": ["chrome.exe"],
+  "window_classes": ["Chrome_WidgetWin_1"],
+  "domain_hints": {
+    "url_focus_shortcut": "ctrl+l",
+    "new_tab_shortcut": "ctrl+t",
+    "close_tab_shortcut": "ctrl+w"
+  },
+  "states": {
+    "browser_open": {
+      "state_id": "browser_open",
+      "name": "Browser Window Open",
+      "description": "Chrome browser is active and responsive to navigation commands.",
+      "predicate": {
+        "title_contains": "Chrome",
+        "min_controls": 1
+      },
+      "available_recipes": ["navigate", "new_tab", "close_tab"]
+    }
+  },
+  "recipes": {
+    "navigate": {
+      "recipe_id": "navigate",
+      "name": "Navigate to URL",
+      "description": "Focuses address bar with Ctrl+L, types destination URL, and presses Enter.",
+      "parameters": [
+        {
+          "name": "url",
+          "type": "string",
+          "required": true,
+          "description": "The destination URL to navigate to."
+        }
+      ],
+      "initial_state": "browser_open",
+      "expected_final_state": "browser_open",
+      "steps": [
+        {
+          "action": "hotkey",
+          "keys": ["ctrl", "l"],
+          "wait_ms": 250
+        },
+        {
+          "action": "type",
+          "text": "{url}",
+          "wait_ms": 250
+        },
+        {
+          "action": "press_key",
+          "target": "enter",
+          "key": "enter",
+          "wait_ms": 1500
+        }
+      ]
+    },
+    "new_tab": {
+      "recipe_id": "new_tab",
+      "name": "Open New Tab",
+      "description": "Opens a new browser tab with Ctrl+T.",
+      "parameters": [],
+      "initial_state": "browser_open",
+      "expected_final_state": "browser_open",
+      "steps": [
+        {
+          "action": "hotkey",
+          "keys": ["ctrl", "t"],
+          "wait_ms": 400
+        }
+      ]
+    },
+    "close_tab": {
+      "recipe_id": "close_tab",
+      "name": "Close Current Tab",
+      "description": "Closes current browser tab with Ctrl+W.",
+      "parameters": [],
+      "initial_state": "browser_open",
+      "expected_final_state": "browser_open",
+      "steps": [
+        {
+          "action": "hotkey",
+          "keys": ["ctrl", "w"],
+          "wait_ms": 400
+        }
+      ]
+    }
+  }
+}

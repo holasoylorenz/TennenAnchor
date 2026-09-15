@@ -95,7 +95,8 @@ class LocalMCPAgent:
             "Examples:\n"
             "  ACTION: desktop_inspect()\n"
             "  ACTION: app_execute_recipe(app='chrome', recipe='navigate', params={'url': 'https://google.com'})\n"
-            "3. After receiving the tool observation, explain the result clearly to the user.\n"
+            "3. After receiving the tool observation, evaluate if the task is complete. If it is NOT complete, take the next action.\n"
+            "4. IMPORTANT: Once you have completed the user's request and verified the result, clearly state 'TASK COMPLETE: <reason>' and stop calling tools.\n"
         )
 
     def check_connection(self) -> str:
@@ -118,7 +119,7 @@ class LocalMCPAgent:
 
     def execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> str:
         """Dispatches a tool call directly to TennenAnchor MCP processor."""
-        print(f"\n⚙️  [TennenAnchor Action]: {tool_name}({arguments})")
+        print(f"\n[TennenAnchor Action]: {tool_name}({arguments})")
         req = {
             "jsonrpc": "2.0",
             "id": int(time.time() * 1000) % 100000,
@@ -137,7 +138,7 @@ class LocalMCPAgent:
         text_outputs = [b.get("text", "") for b in content_blocks if b.get("type") == "text"]
         result_text = "\n".join(text_outputs)
         preview = result_text[:280] + ("..." if len(result_text) > 280 else "")
-        print(f"👁️  [Perception Result]:\n{preview}\n")
+        print(f"[Perception Result]:\n{preview}\n")
         return result_text
 
     def call_llm(self, messages: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -159,12 +160,12 @@ class LocalMCPAgent:
             data = json.loads(resp.read().decode("utf-8"))
             return data["choices"][0]["message"]
 
-    def run_turn(self, user_text: str, conversation_history: List[Dict[str, Any]], max_steps: int = 4) -> None:
+    def run_turn(self, user_text: str, conversation_history: List[Dict[str, Any]], max_steps: int = 10) -> None:
         """Runs a user turn with iterative tool execution."""
         conversation_history.append({"role": "user", "content": user_text})
 
         for step in range(1, max_steps + 1):
-            print("⏳ [Model is thinking...]", end="\r", flush=True)
+            print("[Model is thinking...]", end="\r", flush=True)
             msg = self.call_llm(conversation_history)
             print(" " * 30, end="\r")  # Clear thinking indicator
 
@@ -180,7 +181,7 @@ class LocalMCPAgent:
                 # Remove raw action string from user display for clean output
                 clean_display = re.sub(r"ACTION:\s*[a-zA-Z0-9_]+\(.*?\)", "", content).strip()
                 if clean_display:
-                    print(f"\n🤖 [Agent]: {clean_display}")
+                    print(f"\n[Agent]: {clean_display}")
 
             conversation_history.append(msg)
 
@@ -218,11 +219,11 @@ def main() -> None:
     try:
         model_name = agent.check_connection()
     except ConnectionError as e:
-        print(f"\n❌ {e}")
+        print(f"\n[Error] {e}")
         return
 
     print("=" * 65)
-    print(f"  TennenAnchor Local Agent — Connected to llama-server")
+    print(f"  TennenAnchor Local Agent - Connected to llama-server")
     print(f"  Active Model: {model_name}")
     print(f"  Tools: desktop_inspect, desktop_act, app_execute_recipe ...")
     print("=" * 65)

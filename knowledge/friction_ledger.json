@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated_at": "2026-09-14T21:31:02.248624+00:00",
+  "updated_at": "2026-09-15T22:18:24.192953+00:00",
   "events": [
     {
       "id": "fric_ltspice_001",
@@ -73,6 +73,18 @@
       "resolution": null,
       "refinement": null,
       "occurrences": 3
+    },
+    {
+      "id": "fric_chrome_007",
+      "app": "chrome",
+      "action": "recipe:navigate:step_2:type",
+      "category": "EXECUTION_ERROR",
+      "symptom": "Unknown recipe action: type",
+      "timestamp": "2026-09-15T22:18:24.192947+00:00",
+      "severity": "high",
+      "resolution": null,
+      "refinement": null,
+      "occurrences": 1
     }
   ]
 }

@@ -86,15 +86,20 @@ class LocalMCPAgent:
             "- desktop_inspect(query=None, mode='summary'): inspect active foreground window controls\n"
             "- desktop_act(action='click', coordinates={'x': ..., 'y': ...}): click or type\n"
             "- desktop_step(action='click', ...): act and re-inspect\n"
-            "- app_execute_recipe(app='chrome', recipe='navigate', params={'url': '...'}): run verified app recipes\n"
-            "- app_query(app='chrome'): query app state graphs\n\n"
+            "- app_execute_recipe(app='chrome', recipe='new_tab'): open new browser tab\n"
+            "- app_execute_recipe(app='chrome', recipe='navigate', params={'url': '...'}): browse to URL\n"
+            "- app_execute_recipe(app='ltspice', recipe='open_schematic', params={'path': '...'}): load circuit\n"
+            "- app_execute_recipe(app='ltspice', recipe='run_simulation'): run SPICE simulation\n"
+            "- app_query(app='ltspice'): query app states and recipes\n\n"
             "INSTRUCTIONS:\n"
-            "1. When the user asks you to inspect, check, or interact with the screen/PC, call a tool immediately.\n"
+            "1. When the user asks you to interact with the screen or PC, call a tool immediately on Turn 1.\n"
             "2. To perform an action, output:\n"
             "ACTION: tool_name(argument=value)\n"
             "Examples:\n"
             "  ACTION: desktop_inspect()\n"
+            "  ACTION: app_execute_recipe(app='chrome', recipe='new_tab')\n"
             "  ACTION: app_execute_recipe(app='chrome', recipe='navigate', params={'url': 'https://google.com'})\n"
+            "  ACTION: app_execute_recipe(app='ltspice', recipe='open_schematic', params={'path': 'C:/path/circuit.asc'})\n"
             "3. After receiving the tool observation, evaluate if the task is complete. If it is NOT complete, take the next action.\n"
             "4. IMPORTANT: Once you have completed the user's request and verified the result, clearly state 'TASK COMPLETE: <reason>' and stop calling tools.\n"
         )
@@ -114,7 +119,7 @@ class LocalMCPAgent:
             raise ConnectionError(
                 f"Cannot connect to llama-server at {models_url}.\n"
                 "Please make sure llama-server is running in a terminal:\n"
-                "  C:\\llama.cpp\\llama-server.exe -m C:\\llama.cpp\\models\\gemma-2-2b-it-Q4_K_M.gguf -c 4096 --port 8080\n"
+                "  C:\\llama.cpp\\llama-server.exe -m C:\\llama.cpp\\models\\gemma-4-E4B-it-Q4_K_M.gguf -c 4096 --port 8080\n"
             ) from e
 
     def execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> str:
@@ -148,7 +153,7 @@ class LocalMCPAgent:
             "tools": self.tools,
             "tool_choice": "auto",
             "temperature": 0.1,
-            "max_tokens": 512,
+            "max_tokens": 1024,
         }
         req = urllib.request.Request(
             self.api_url,
@@ -168,6 +173,11 @@ class LocalMCPAgent:
             print("[Model is thinking...]", end="\r", flush=True)
             msg = self.call_llm(conversation_history)
             print(" " * 30, end="\r")  # Clear thinking indicator
+
+            reasoning = (msg.get("reasoning_content") or "").strip()
+            if reasoning:
+                first_line = reasoning.split("\n")[0].strip()
+                print(f"[Gemma 4 Thought]: {first_line}")
 
             content = (msg.get("content") or "").strip()
             tool_calls = msg.get("tool_calls") or []

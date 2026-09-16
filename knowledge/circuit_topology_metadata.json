@@ -71,7 +71,7 @@
       "relative_path": "outputs/bandpass_filter.asc",
       "quality_score": 100,
       "components_count": 7,
-      "wires_count": 20,
+      "wires_count": 19,
       "flags_count": 7,
       "total_pins": 17,
       "directives_count": 4,
@@ -228,7 +228,7 @@
       "wires_count": 13,
       "flags_count": 3,
       "total_pins": 10,
-      "directives_count": 4,
+      "directives_count": 5,
       "is_clean": true
     }
   ]

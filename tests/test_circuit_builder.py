@@ -218,7 +218,7 @@ def test_buck_boost_synthesis():
     assert "SYMATTR InstName S1" in asc_text
     assert "SYMBOL ind 336 320 R0" in asc_text
     assert "SYMATTR InstName L1" in asc_text
-    assert "SYMBOL diode 512 280 R90" in asc_text
+    assert "SYMBOL diode 512 264 R90" in asc_text
     assert "SYMATTR InstName D1" in asc_text
     assert "SYMBOL cap 624 280 R0" in asc_text
     assert "SYMATTR InstName C1" in asc_text

@@ -77,6 +77,11 @@
         },
         {
           "action": "hotkey",
+          "keys": ["ctrl", "w"],
+          "wait_ms": 300
+        },
+        {
+          "action": "hotkey",
           "keys": ["ctrl", "o"],
           "wait_ms": 600
         },

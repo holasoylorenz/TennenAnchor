@@ -527,7 +527,7 @@ def build_buck_boost_schematic(
     # 5. Fast Freewheeling Diode (D1)
     # Pins: K at (448, 280), A at (512, 280)
     sch.add_wire(352, 280, 448, 280)
-    sch.add_symbol("diode", 512, 280, "R90", inst_name="D1", value="1N5819")
+    sch.add_symbol("diode", 512, 264, "R90", inst_name="D1", value="1N5819")
     sch.add_wire(512, 280, 640, 280)
 
     # 6. Filter Capacitor (C1) & Resistive Load (Rload)
@@ -724,11 +724,10 @@ def build_bandpass_filter_schematic(
     """
     sch = LTspiceSchematic(sheet_width=1100, sheet_height=700, grid_size=16)
 
-    # 1. Power supply flags and op-amp
-    # UniversalOpAmp2 at (480, 240 R0)
-    # IN+ (448, 256), IN- (448, 224), V+ (480, 208), V- (480, 272), OUT (512, 240)
+    # 1. OpAmp U1: UniversalOpAmp2 at (480, 240 R0)
+    # In+ (448, 256), In- (448, 224), V+ (480, 208), V- (480, 272), OUT (512, 240)
     sch.add_symbol("OpAmps\\UniversalOpAmp2", 480, 240, "R0", inst_name="U1")
-    # Ground non-inverting input IN+
+    # Ground non-inverting input In+
     sch.add_wire(448, 256, 448, 304)
     sch.add_flag(448, 304, "0")
     # Supply rails
@@ -737,7 +736,7 @@ def build_bandpass_filter_schematic(
     sch.add_wire(480, 272, 480, 304)
     sch.add_flag(480, 304, "-15V")
 
-    # 2. Input AC Source
+    # 2. Input AC Source at (80, 208 R0): Pin+ (80, 224), Pin- (80, 304)
     sch.add_symbol("voltage", 80, 208, "R0", inst_name="Vin", value="0", value2="AC 1")
     sch.add_wire(80, 224, 160, 224)
     sch.add_flag(80, 224, "VIN")
@@ -747,40 +746,39 @@ def build_bandpass_filter_schematic(
     # 3. Input Resistor R1 (256, 208 R90): Pin B (160, 224), Pin A (240, 224)
     sch.add_symbol("res", 256, 208, "R90", inst_name="R1", value="10k",
                    windows=["0 0 56 VBottom 2", "3 32 56 VTop 2"])
-    sch.add_wire(240, 224, 288, 224)  # Node Vx at (288, 224)
+    sch.add_wire(240, 224, 272, 224)  # Wire to Node Vx at (272, 224)
 
-    # 4. Resistor R2 to ground from Vx: Pin A at (288, 240), Pin B at (288, 320)
-    sch.add_wire(288, 224, 288, 240)
-    sch.add_symbol("res", 272, 224, "R0", inst_name="R2", value="1.5k")
-    sch.add_wire(288, 320, 288, 336)
-    sch.add_flag(288, 336, "0")
+    # 4. Resistor R2 (from Vx down to GND): Pin A (272, 240), Pin B (272, 320)
+    sch.add_wire(272, 224, 272, 240)
+    sch.add_symbol("res", 256, 224, "R0", inst_name="R2", value="1.5k")
+    sch.add_wire(272, 320, 272, 336)
+    sch.add_flag(272, 336, "0")
 
-    # 5. Capacitor C1 from Vx to IN- (448, 224): Pin A at (304, 224), Pin B at (368, 224)
-    sch.add_wire(288, 224, 304, 224)
-    sch.add_symbol("cap", 368, 240, "R270", inst_name="C1", value="10n")
-    sch.add_wire(368, 224, 448, 224)
+    # 5. Capacitor C1 (from Vx to In- at 448, 224):
+    # C1 at (320, 240 R270): Pin A (320, 224), Pin B (384, 224)
+    sch.add_wire(272, 224, 320, 224)
+    sch.add_symbol("cap", 320, 240, "R270", inst_name="C1", value="10n")
+    sch.add_wire(384, 224, 448, 224)
 
-    # 6. Feedback Capacitor C2 from Vx (288, 224) to VOUT (544, 240) along Y=128
-    sch.add_wire(288, 224, 288, 128)
-    sch.add_wire(288, 128, 336, 128)
-    # C2 at (400, 144 R270): Pin A (336, 128), Pin B (400, 128)
-    sch.add_symbol("cap", 400, 144, "R270", inst_name="C2", value="10n")
-    sch.add_wire(400, 128, 544, 128)
-    sch.add_wire(544, 128, 544, 240)
+    # 6. Feedback Capacitor C2 (from Vx to VOUT) along Y=80:
+    # C2 at (352, 96 R270): Pin A (352, 80), Pin B (416, 80)
+    sch.add_wire(272, 224, 272, 80)
+    sch.add_wire(272, 80, 352, 80)
+    sch.add_symbol("cap", 352, 96, "R270", inst_name="C2", value="10n")
+    sch.add_wire(416, 80, 560, 80)
+    sch.add_wire(560, 80, 560, 240)
 
-    # 7. Feedback Resistor R3 from IN- (448, 224) to VOUT along Y=176
-    sch.add_wire(448, 224, 448, 176)
-    # R3 (528, 160 R90): Pin B (432, 176), Pin A (512, 176)
-    sch.add_wire(448, 176, 432, 176)
-    sch.add_symbol("res", 528, 160, "R90", inst_name="R3", value="47k",
-                   windows=["0 0 56 VBottom 2", "3 32 56 VTop 2"])
-    sch.add_wire(512, 176, 544, 176)
-    sch.add_wire(544, 176, 544, 240)
+    # 7. Feedback Resistor R3 (from In- to VOUT) along Y=144:
+    # R3 at (544, 128 R90): Pin B (448, 144), Pin A (528, 144)
+    sch.add_wire(448, 224, 448, 144)
+    sch.add_symbol("res", 544, 128, "R90", inst_name="R3", value="47k")
+    sch.add_wire(528, 144, 560, 144)
+    sch.add_wire(560, 144, 560, 240)
 
-    # 8. Output Connection
-    sch.add_wire(512, 240, 544, 240)
-    sch.add_wire(544, 240, 608, 240)
-    sch.add_flag(608, 240, "VOUT")
+    # 8. Output Connection: OpAmp OUT (512, 240) to VOUT
+    sch.add_wire(512, 240, 560, 240)
+    sch.add_wire(560, 240, 624, 240)
+    sch.add_flag(624, 240, "VOUT")
 
     # 9. Directives
     directives = [
@@ -803,44 +801,47 @@ def build_voltage_reference_schematic(
     """
     sch = LTspiceSchematic(sheet_width=900, sheet_height=600, grid_size=16)
 
-    # 1. DC Input Source at (80, 176 R0): Pin+ (80, 192), Pin- (80, 272)
-    sch.add_symbol("voltage", 80, 176, "R0", inst_name="Vin", value=str(vin_v))
-    sch.add_wire(80, 144, 80, 192)
-    sch.add_wire(80, 144, 304, 144)
-    sch.add_flag(80, 144, "VIN")
-    sch.add_wire(80, 272, 80, 352)
+    # 1. DC Input Source at (80, 160 R0): Pin+ (80, 176), Pin- (80, 256)
+    sch.add_symbol("voltage", 80, 160, "R0", inst_name="Vin", value=str(vin_v))
+    sch.add_wire(80, 128, 80, 176)
+    sch.add_wire(80, 128, 320, 128)
+    sch.add_flag(80, 128, "VIN")
+    sch.add_wire(80, 256, 80, 352)
 
-    # 2. Dropping Resistor R1 at (288, 144 R0): Pin A (304, 160), Pin B (304, 240)
-    sch.add_wire(304, 144, 304, 160)
-    sch.add_symbol("res", 288, 144, "R0", inst_name="R1", value="680")
+    # 2. Dropping Resistor R1 at (304, 128 R0): Pin A (320, 144), Pin B (320, 224)
+    sch.add_wire(320, 128, 320, 144)
+    sch.add_symbol("res", 304, 128, "R0", inst_name="R1", value="680")
 
-    # 3. Reference Node VREF at (304, 240)
-    sch.add_wire(304, 240, 384, 240)
-    sch.add_wire(384, 240, 464, 240)
-    sch.add_flag(464, 240, "VREF")
+    # 3. Reference Node VREF bus at Y=224: spanning from X=320 to X=480
+    sch.add_wire(320, 224, 400, 224)
+    sch.add_wire(400, 224, 480, 224)
+    sch.add_flag(480, 224, "VREF")
 
-    # 4. Zener Diode D1 at (304, 256 R0): Pin A (304, 256), Pin K (304, 320)
-    sch.add_symbol("diode", 304, 256, "R0", inst_name="D1", value="BZX84C5V1L")
-    sch.add_wire(304, 240, 304, 256)
-    sch.add_wire(304, 320, 304, 352)
+    # 4. Zener Diode D1 placed at (336, 304 R180):
+    # Pin 2 (Cathode -) at (320, 240) connects to VREF
+    # Pin 1 (Anode +) at (320, 304) connects to Ground
+    sch.add_symbol("zener", 336, 304, "R180", inst_name="D1", value="BZX84C5V1L")
+    sch.add_wire(320, 224, 320, 240)
+    sch.add_wire(320, 304, 320, 352)
 
-    # 5. Output Filter Capacitor C1 at (368, 256 R0): Pin A (384, 256), Pin B (384, 320)
-    sch.add_symbol("cap", 368, 256, "R0", inst_name="C1", value="10u")
-    sch.add_wire(384, 240, 384, 256)
-    sch.add_wire(384, 320, 384, 352)
+    # 5. Output Filter Capacitor C1 at (384, 240 R0): Pin A (400, 240), Pin B (400, 304)
+    sch.add_symbol("cap", 384, 240, "R0", inst_name="C1", value="10u")
+    sch.add_wire(400, 224, 400, 240)
+    sch.add_wire(400, 304, 400, 352)
 
-    # 6. Load Resistor Rload at (448, 240 R0): Pin A (464, 256), Pin B (464, 336)
-    sch.add_symbol("res", 448, 240, "R0", inst_name="Rload", value="10k")
-    sch.add_wire(464, 240, 464, 256)
-    sch.add_wire(464, 336, 464, 352)
+    # 6. Load Resistor Rload at (464, 224 R0): Pin A (480, 240), Pin B (480, 320)
+    sch.add_symbol("res", 464, 224, "R0", inst_name="Rload", value="10k")
+    sch.add_wire(480, 224, 480, 240)
+    sch.add_wire(480, 320, 480, 352)
 
     # 7. Ground Rail along Y=352
-    sch.add_wire(80, 352, 464, 352)
+    sch.add_wire(80, 352, 480, 352)
     sch.add_flag(80, 352, "0")
 
-    # 8. Directives
+    # 8. Directives & Model definition (ensures LTspice never errors on missing model)
     directives = [
         f";Precision Zener Voltage Reference (Vin = {vin_v}V, Vref = {vref_v}V)",
+        ".model BZX84C5V1L D(Is=1e-14 Bv=5.1 Ibv=1m)",
         ".tran 10m",
         ".meas TRAN Vref_dc AVG V(VREF) FROM 5m TO 10m",
         ".meas TRAN I_zener AVG I(D1) FROM 5m TO 10m",
@@ -860,12 +861,13 @@ def build_bjt_amplifier_schematic(
     """
     sch = LTspiceSchematic(sheet_width=1000, sheet_height=700, grid_size=16)
 
-    # 1. DC Supply Source Vcc at (80, 144 R0): Pin+ (80, 160), Pin- (80, 240)
-    sch.add_symbol("voltage", 80, 144, "R0", inst_name="Vcc", value=str(vcc_v))
-    sch.add_wire(80, 160, 80, 96)
-    sch.add_wire(80, 96, 352, 96)
-    sch.add_flag(80, 96, "VCC")
-    sch.add_wire(80, 240, 80, 480)
+    # 1. DC Supply Source Vcc at (48, 144 R0): Pin+ (48, 160), Pin- (48, 240)
+    sch.add_symbol("voltage", 48, 144, "R0", inst_name="Vcc", value=str(vcc_v),
+                   windows=["0 -32 16 Right 2", "3 -32 96 Right 2"])
+    sch.add_wire(48, 160, 48, 96)
+    sch.add_wire(48, 96, 384, 96)
+    sch.add_flag(48, 96, "VCC")
+    sch.add_wire(48, 240, 48, 480)
 
     # 2. Base Bias Divider: R1 (top) and R2 (bottom) along X=224
     # R1 at (208, 128 R0): Pin A (224, 144), Pin B (224, 224)
@@ -878,45 +880,46 @@ def build_bjt_amplifier_schematic(
     sch.add_wire(224, 384, 224, 480)
 
     # 3. NPN Transistor Q1 at (320, 224 R0):
-    # Collector (352, 224), Base (320, 272), Emitter (352, 320)
+    # Collector (384, 224), Base (320, 272), Emitter (384, 320)
     sch.add_symbol("npn", 320, 224, "R0", inst_name="Q1", value="2N2222")
     sch.add_wire(224, 272, 320, 272)  # Base connection
 
-    # 4. Collector Load Resistor Rc at (336, 112 R0): Pin A (352, 128), Pin B (352, 208)
-    sch.add_wire(352, 96, 352, 128)
-    sch.add_symbol("res", 336, 112, "R0", inst_name="Rc", value=f"{r_c_kohm}k")
-    sch.add_wire(352, 208, 352, 224)
+    # 4. Collector Load Resistor Rc at (368, 112 R0): Pin A (384, 128), Pin B (384, 208)
+    sch.add_wire(384, 96, 384, 128)
+    sch.add_symbol("res", 368, 112, "R0", inst_name="Rc", value=f"{r_c_kohm}k")
+    sch.add_wire(384, 208, 384, 224)
 
-    # 5. Emitter Degeneration Resistor Re at (336, 336 R0): Pin A (352, 352), Pin B (352, 432)
-    sch.add_wire(352, 320, 352, 352)
-    sch.add_symbol("res", 336, 336, "R0", inst_name="Re", value=f"{int(r_e_ohm)}")
-    sch.add_wire(352, 432, 352, 480)
+    # 5. Emitter Degeneration Resistor Re at (368, 336 R0): Pin A (384, 352), Pin B (384, 432)
+    sch.add_wire(384, 320, 384, 352)
+    sch.add_symbol("res", 368, 336, "R0", inst_name="Re", value=f"{int(r_e_ohm)}")
+    sch.add_wire(384, 432, 384, 480)
 
-    # 6. Emitter Bypass Capacitor Ce at (400, 336 R0): Pin A (416, 336), Pin B (416, 400)
-    sch.add_wire(352, 320, 416, 320)
-    sch.add_wire(416, 320, 416, 336)
-    sch.add_symbol("cap", 400, 336, "R0", inst_name="Ce", value="47u")
-    sch.add_wire(416, 400, 416, 480)
+    # 6. Emitter Bypass Capacitor Ce at (448, 352 R0): Pin A (464, 352), Pin B (464, 416)
+    sch.add_wire(384, 320, 464, 320)
+    sch.add_wire(464, 320, 464, 352)
+    sch.add_symbol("cap", 448, 352, "R0", inst_name="Ce", value="47u")
+    sch.add_wire(464, 416, 464, 480)
 
     # 7. Input AC Source Vin & Input Coupling Cap Cin
-    sch.add_symbol("voltage", 64, 304, "R0", inst_name="Vin", value="0", value2="AC 10m")
-    sch.add_wire(64, 320, 64, 272)
-    sch.add_wire(64, 272, 96, 272)
-    sch.add_flag(64, 272, "VIN")
-    sch.add_wire(64, 400, 64, 480)
-    # Cin at (160, 288 R270): Pin A (96, 272), Pin B (160, 272)
-    sch.add_symbol("cap", 160, 288, "R270", inst_name="Cin", value="10u")
+    sch.add_symbol("voltage", 48, 320, "R0", inst_name="Vin", value="0", value2="AC 10m",
+                   windows=["0 -32 16 Right 2", "3 -32 96 Right 2"])
+    sch.add_wire(48, 336, 48, 272)
+    sch.add_wire(48, 272, 96, 272)
+    sch.add_flag(48, 272, "VIN")
+    sch.add_wire(48, 416, 48, 480)
+    # Cin at (96, 288 R270): Pin A (96, 272), Pin B (160, 272)
+    sch.add_symbol("cap", 96, 288, "R270", inst_name="Cin", value="10u")
     sch.add_wire(160, 272, 224, 272)
 
-    # 8. Output Coupling Cap Cout at (448, 240 R270): Pin A (384, 224), Pin B (448, 224)
-    sch.add_wire(352, 224, 384, 224)
+    # 8. Output Coupling Cap Cout at (448, 240 R270): Pin A (448, 224), Pin B (512, 224)
+    sch.add_wire(384, 224, 448, 224)
     sch.add_symbol("cap", 448, 240, "R270", inst_name="Cout", value="10u")
-    sch.add_wire(448, 224, 512, 224)
-    sch.add_flag(512, 224, "VOUT")
+    sch.add_wire(512, 224, 576, 224)
+    sch.add_flag(576, 224, "VOUT")
 
     # 9. Ground Rail along Y=480
-    sch.add_wire(64, 480, 416, 480)
-    sch.add_flag(64, 480, "0")
+    sch.add_wire(48, 480, 464, 480)
+    sch.add_flag(48, 480, "0")
 
     # 10. Directives
     directives = [

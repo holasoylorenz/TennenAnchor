@@ -170,16 +170,19 @@ def get_symbol_pins_and_bbox(
             pins = [("A", x + 16, y + 16), ("B", x + 16, y + 96)]
             bbox = BoundingBox(x, y, x + 32, y + 96)
 
-    elif norm_name in ("diode", "schottky"):
+    elif norm_name in ("diode", "schottky", "zener"):
         if rot == "R0":
-            pins = [("A", x, y), ("K", x, y + 64)]
-            bbox = BoundingBox(x - 16, y, x + 16, y + 64)
+            pins = [("A", x + 16, y), ("K", x + 16, y + 64)]
+            bbox = BoundingBox(x, y, x + 32, y + 64)
+        elif rot == "R180":
+            pins = [("A", x - 16, y), ("K", x - 16, y - 64)]
+            bbox = BoundingBox(x - 32, y - 64, x, y)
         elif rot == "R90":
-            pins = [("A", x, y), ("K", x - 64, y)]
-            bbox = BoundingBox(x - 64, y - 16, x, y + 16)
+            pins = [("A", x, y + 16), ("K", x - 64, y + 16)]
+            bbox = BoundingBox(x - 64, y, x, y + 32)
         else:
-            pins = [("A", x, y), ("K", x, y + 64)]
-            bbox = BoundingBox(x - 16, y, x + 16, y + 64)
+            pins = [("A", x + 16, y), ("K", x + 16, y + 64)]
+            bbox = BoundingBox(x, y, x + 32, y + 64)
 
     elif norm_name in ("nmos", "pmos"):
         if rot == "R0":
@@ -193,12 +196,12 @@ def get_symbol_pins_and_bbox(
             bbox = BoundingBox(x, y, x + 48, y + 96)
 
     elif norm_name in ("npn", "bjt"):
-        pins = [("C", x + 32, y), ("B", x, y + 48), ("E", x + 32, y + 96)]
-        bbox = BoundingBox(x, y, x + 32, y + 96)
+        pins = [("C", x + 64, y), ("B", x, y + 48), ("E", x + 64, y + 96)]
+        bbox = BoundingBox(x, y, x + 64, y + 96)
 
     elif norm_name == "pnp":
-        pins = [("E", x + 32, y), ("B", x, y + 48), ("C", x + 32, y + 96)]
-        bbox = BoundingBox(x, y, x + 32, y + 96)
+        pins = [("C", x + 64, y), ("B", x, y + 48), ("E", x + 64, y + 96)]
+        bbox = BoundingBox(x, y, x + 64, y + 96)
 
     elif norm_name in ("current", "isource", "bi", "bi2"):
         pins = [("+", x, y + 16), ("-", x, y + 96)]

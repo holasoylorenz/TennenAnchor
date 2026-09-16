@@ -205,7 +205,7 @@ class LocalMCPAgent:
             data = json.loads(resp.read().decode("utf-8"))
             return data["choices"][0]["message"]
 
-    def run_turn(self, user_text: str, conversation_history: List[Dict[str, Any]], max_steps: int = 10) -> None:
+    def run_turn(self, user_text: str, conversation_history: List[Dict[str, Any]], max_steps: int = 30) -> None:
         """Runs a user turn with iterative tool execution."""
         conversation_history.append({"role": "user", "content": user_text})
 

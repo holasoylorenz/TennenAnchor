@@ -55,6 +55,8 @@ class Symbol:
     value: Optional[str] = None
     value2: Optional[str] = None
 
+    windows: Optional[List[str]] = None
+
     def __post_init__(self) -> None:
         rot = self.rotation.strip().upper()
         if rot not in VALID_ROTATIONS:
@@ -65,8 +67,9 @@ class Symbol:
 
     def to_asc(self) -> str:
         lines = [f"SYMBOL {self.name} {self.x} {self.y} {self.rotation}"]
-        lines.append("WINDOW 123 0 0 Left 0")
-        lines.append("WINDOW 39 0 0 Left 0")
+        if self.windows:
+            for w in self.windows:
+                lines.append(f"WINDOW {w}")
         if self.inst_name is not None:
             lines.append(f"SYMATTR InstName {self.inst_name}")
         if self.value is not None:
@@ -558,43 +561,58 @@ def build_rc_filter_schematic(
 ) -> LTspiceSchematic:
     """
     Synthesizes a first-order passive RC Low-Pass Filter schematic for LTspice.
+    Mathematically aligned with standard LTspice symbol pin offsets and collision-free text.
     Cutoff frequency: fc = 1 / (2 * pi * R * C)
     """
     import math
-    sch = LTspiceSchematic(sheet_width=900, sheet_height=600, grid_size=8)
+    sch = LTspiceSchematic(sheet_width=900, sheet_height=600, grid_size=16)
     fc_hz = 1.0 / (2.0 * math.pi * (r_kohm * 1e3) * (c_nf * 1e-9))
 
-    # 1. AC Voltage Source at (112, 176)
-    sch.add_symbol("voltage", 112, 176, "R0", inst_name="Vin", value="0", value2=f"AC {ac_mag}")
-    sch.add_wire(112, 128, 112, 176)
-    sch.add_flag(112, 128, "VIN")
-    sch.add_wire(112, 256, 112, 304)
-    sch.add_flag(112, 304, "0")
+    # Grid layout:
+    # Vin supply at x=80, y=176 (Pin+ at 80,192; Pin- at 80,272)
+    # R1 horizontal at x=256, y=144 R90 (Pin B at 160,160; Pin A at 240,160)
+    # C1 vertical at x=304, y=160 R0 (Pin A at 320,160; Pin B at 320,224)
+    # VOUT flag at x=384, y=160
 
-    # 2. Resistor R1 from (112, 128) horizontally to (272, 128)
-    # Under R90 / R270: horizontal orientation
-    sch.add_wire(112, 128, 176, 128)
-    sch.add_symbol("res", 176, 144, "R90", inst_name="R1", value=f"{r_kohm:.1f}k")
-    sch.add_wire(256, 128, 272, 128)
+    # 1. AC Voltage Source
+    sch.add_symbol(
+        "voltage", 80, 176, "R0",
+        inst_name="Vin", value="0", value2=f"AC {ac_mag}",
+        windows=["0 24 16 Left 2", "3 24 96 Left 2"]
+    )
+    sch.add_wire(80, 160, 80, 192)
+    sch.add_wire(80, 160, 160, 160)
+    sch.add_flag(80, 160, "VIN")
+    sch.add_wire(80, 272, 80, 304)
+    sch.add_flag(80, 304, "0")
 
-    # 3. Output Node VOUT at (272, 128)
-    sch.add_flag(272, 128, "VOUT")
+    # 2. Resistor R1
+    sch.add_symbol(
+        "res", 256, 144, "R90",
+        inst_name="R1", value=f"{r_kohm:.1f}k",
+        windows=["0 0 56 VBottom 2", "3 32 56 VTop 2"]
+    )
+    sch.add_wire(240, 160, 320, 160)
 
-    # 4. Capacitor C1 from (272, 128) down to Ground at (272, 304)
-    sch.add_wire(272, 128, 272, 208)
-    sch.add_symbol("cap", 256, 208, "R0", inst_name="C1", value=f"{c_nf:.1f}n")
-    sch.add_wire(272, 272, 272, 304)
-    sch.add_flag(272, 304, "0")
+    # 3. Capacitor C1
+    sch.add_symbol(
+        "cap", 304, 160, "R0",
+        inst_name="C1", value=f"{c_nf:.1f}n"
+    )
+    sch.add_wire(320, 224, 320, 304)
+    sch.add_flag(320, 304, "0")
+
+    # 4. Output Node VOUT
+    sch.add_wire(320, 160, 384, 160)
+    sch.add_flag(384, 160, "VOUT")
 
     # 5. Directives & Measurements
     directives = [
-        f";RC Low-Pass Filter (R = {r_kohm}k, C = {c_nf}nF)",
-        f";Theoretical -3dB Cutoff: fc = {fc_hz:.1f} Hz",
+        f";RC Low-Pass Filter (R = {r_kohm}k, C = {c_nf}nF, fc = {fc_hz:.1f} Hz)",
         ".ac dec 50 1 100k",
         ".meas AC fc WHEN mag(V(VOUT))=0.7071",
-        ".meas AC A0 FIND mag(V(VOUT)) AT 1",
     ]
-    sch.add_directive_block(start_x=80, start_y=360, lines=directives, line_height=32)
+    sch.add_directive_block(start_x=80, start_y=350, lines=directives, line_height=32)
 
     return sch
 

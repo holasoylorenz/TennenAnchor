@@ -76,28 +76,35 @@ class AppLifecycleBroker:
                 user32.GetWindowTextW(hwnd, buf, length + 1)
                 title = buf.value.lower()
 
-            if app_name_lower in title or app_id_lower in title:
-                candidates_by_title.append(hwnd)
-                return True
-
-            # Check owning process name
+            # Check owning process name first
             pid = wintypes.DWORD()
             user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+            pname = ""
             if pid.value > 0:
                 try:
                     pname = psutil.Process(pid.value).name().lower()
                     if any(pat in pname for pat in patterns):
                         candidates_by_proc.append(hwnd)
+                        return True
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     pass
+
+            # Exclude known Windows shell/search hosts from title matching
+            ignored_procs = {"searchhost.exe", "shellexperiencehost.exe", "explorer.exe", "startmenuexperiencehost.exe"}
+            if pname in ignored_procs:
+                return True
+
+            # Fallback: check window title
+            if app_name_lower in title or app_id_lower in title:
+                candidates_by_title.append(hwnd)
 
             return True
 
         user32.EnumWindows(WNDENUMPROC(callback), 0)
-        if candidates_by_title:
-            return candidates_by_title[0]
         if candidates_by_proc:
             return candidates_by_proc[0]
+        if candidates_by_title:
+            return candidates_by_title[0]
         return None
 
     def resolve_executable_path(self, profile: AppProfile) -> Optional[Path]:

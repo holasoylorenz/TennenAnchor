@@ -2,6 +2,14 @@
 
 Operational runtime guidance for AI computer-use agents (Claude Code, Antigravity CLI, Cursor, OpenAI) interacting with Windows desktop and EDA applications via TennenAnchor.
 
+## 0. Golden Action-First Invariant (Zero-Turn Exploration)
+
+> **CRITICAL DIRECTIVE FOR AGENTS & SUBAGENTS**:
+> **DO NOT spend turns reading source code, JSON schemas, or internal helper implementations.**
+> You already have the verified command map below.
+> **Actuate the target recipe immediately on Turn 1.**
+> Only inspect files if an explicit execution error or unhandled state occurs.
+
 ---
 
 ## 1. Quickstart & Verification Commands

@@ -20,16 +20,6 @@
     }
   },
   "states": {
-    "empty_workspace": {
-      "state_id": "empty_workspace",
-      "name": "Empty Workspace",
-      "description": "LTspice is open with no schematic or waveform active.",
-      "predicate": {
-        "title_contains": "LTspice",
-        "has_controls": ["New Schematic", "Open"]
-      },
-      "available_recipes": ["open_schematic"]
-    },
     "schematic_open": {
       "state_id": "schematic_open",
       "name": "Schematic Active",
@@ -59,6 +49,16 @@
         "has_controls": ["OK", "Cancel"]
       },
       "available_recipes": []
+    },
+    "empty_workspace": {
+      "state_id": "empty_workspace",
+      "name": "Empty Workspace",
+      "description": "LTspice is open with no schematic or waveform active.",
+      "predicate": {
+        "title_contains": "LTspice",
+        "has_controls": ["New Schematic", "Open"]
+      },
+      "available_recipes": ["open_schematic"]
     }
   },
   "recipes": {

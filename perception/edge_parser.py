@@ -82,6 +82,8 @@ class EdgeUIAParser:
     def _crawl_foreground_window(self, query: Optional[str] = None) -> Dict[str, Any]:
         """Internal synchronous crawl of the foreground window."""
         ensure_interactive_desktop()
+        import ctypes
+        ctypes.windll.ole32.CoInitialize(None)
         try:
             import uiautomation as auto
         except ImportError:

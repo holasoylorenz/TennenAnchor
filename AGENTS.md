@@ -44,7 +44,13 @@ py -3 harness.py sync outputs/miller_ota.asc --app ltspice
 # 7. Check struggle & friction ledger
 py -3 harness.py struggles --app ltspice
 
-# 8. Run empirical latency & token benchmark
+# 8. Run local autonomous agent (Gemma 4 E4B + CUDA GPU)
+py -3 harness.py agent "design an rc filter and simulate it in ltspice"
+# Or run interactive chat REPL:
+py -3 harness.py agent
+# Or double-click Run_Local_Agent.bat
+
+# 9. Run empirical latency & token benchmark
 py -3 harness.py benchmark --samples 10 --no-save
 ```
 

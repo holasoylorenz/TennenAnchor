@@ -228,10 +228,54 @@ def cmd_sync(args: argparse.Namespace) -> None:
     print("------------------------------------------------------\n")
 
 
+def cmd_agent(args: argparse.Namespace) -> None:
+    """Runs autonomous local LLM agent with direct MCP tools and hardware-optimized execution."""
+    from scripts.run_local_agent import LocalMCPAgent
+    agent = LocalMCPAgent()
+    try:
+        model_name = agent.ensure_server_running()
+    except Exception as e:
+        print(f"\n[Error] Could not initialize local LLM: {e}")
+        sys.exit(1)
+
+    print("=" * 65)
+    print("  TennenAnchor Local Agent — Hardware Accelerated (CUDA GPU + 6 Cores)")
+    print(f"  Active Model: {model_name}")
+    print("=" * 65)
+
+    if args.goal:
+        goal_text = " ".join(args.goal)
+        print(f"\nGoal: {goal_text}\n")
+        history = [{"role": "system", "content": agent.system_prompt}]
+        agent.run_turn(goal_text, history)
+        return
+
+    # Interactive loop
+    print("Interactive agent ready. Type your request below (or 'exit' to quit):\n")
+    history = [{"role": "system", "content": agent.system_prompt}]
+    while True:
+        try:
+            user_input = input("You: ").strip()
+            if not user_input:
+                continue
+            if user_input.lower() in ("exit", "quit", "q"):
+                print("Goodbye!")
+                break
+            agent.run_turn(user_input, history)
+            print()
+        except (KeyboardInterrupt, EOFError):
+            print("\nExiting.")
+            break
+
+
 def main() -> None:
     init_dpi_awareness()
     parser = argparse.ArgumentParser(description="TennenAnchor CLI — Windows Computer-Use Runtime & Tool Broker")
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
+
+    # Agent (Local LLM Autonomous Agent)
+    p_agent = subparsers.add_parser("agent", help="Run local autonomous agent (Gemma 4 E4B + CUDA GPU)")
+    p_agent.add_argument("goal", nargs="*", help="Goal for the agent to execute (leave empty for interactive chat)")
 
     # Inspect
     p_inspect = subparsers.add_parser("inspect", help="Inspect active foreground window")
@@ -272,7 +316,9 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if args.command == "inspect":
+    if args.command == "agent":
+        cmd_agent(args)
+    elif args.command == "inspect":
         cmd_inspect(args)
     elif args.command == "escalate":
         cmd_escalate(args)

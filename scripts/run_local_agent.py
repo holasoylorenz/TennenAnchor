@@ -117,11 +117,50 @@ class LocalMCPAgent:
                     return models[0].get("id") or models[0].get("name", "local-model")
                 return "local-model"
         except Exception as e:
-            raise ConnectionError(
-                f"Cannot connect to llama-server at {models_url}.\n"
-                "Please make sure llama-server is running in a terminal:\n"
-                "  C:\\llama.cpp\\llama-server.exe -m C:\\llama.cpp\\models\\gemma-4-E4B-it-Q4_K_M.gguf -c 4096 --port 8080\n"
-            ) from e
+            raise ConnectionError(f"Cannot connect to llama-server at {models_url}") from e
+
+    def ensure_server_running(self) -> str:
+        """Verifies or auto-launches llama-server with optimal CPU/GPU parameters for this PC."""
+        import subprocess
+        try:
+            return self.check_connection()
+        except ConnectionError:
+            pass
+
+        print("[TennenAnchor] llama-server not detected on port 8080. Starting automatically...")
+        llama_exe = Path(r"C:\llama.cpp\llama-server.exe")
+        model_path = Path(r"C:\llama.cpp\models\gemma-4-E4B-it-Q4_K_M.gguf")
+        if not llama_exe.exists() or not model_path.exists():
+            raise FileNotFoundError(f"llama-server ({llama_exe}) or model ({model_path}) not found.")
+
+        cmd = [
+            str(llama_exe),
+            "-m", str(model_path),
+            "-c", "4096",
+            "--port", "8080",
+            "-ngl", "28",
+            "-t", "6",
+            "-np", "1",
+        ]
+        subprocess.Popen(
+            cmd,
+            cwd=str(llama_exe.parent),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0),
+        )
+
+        t0 = time.time()
+        while time.time() - t0 < 30:
+            time.sleep(1.0)
+            try:
+                name = self.check_connection()
+                print(f"[TennenAnchor] llama-server ready and listening! Model: {name}")
+                return name
+            except ConnectionError:
+                pass
+
+        raise TimeoutError("llama-server failed to initialize within 30 seconds.")
 
     def execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> str:
         """Dispatches a tool call directly to TennenAnchor MCP processor."""
@@ -226,8 +265,8 @@ class LocalMCPAgent:
 def main() -> None:
     agent = LocalMCPAgent()
     try:
-        model_name = agent.check_connection()
-    except ConnectionError as e:
+        model_name = agent.ensure_server_running()
+    except Exception as e:
         print(f"\n[Error] {e}")
         return
 

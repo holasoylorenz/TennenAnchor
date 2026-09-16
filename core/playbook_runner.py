@@ -60,7 +60,12 @@ class PlaybookRunner:
             val_str = str(v)
             if os.name == "nt" and ("/" in val_str or "\\" in val_str or k in ("path", "file")):
                 try:
-                    val_str = os.path.normpath(val_str)
+                    from pathlib import Path
+                    p = Path(val_str)
+                    if p.exists() or not p.is_absolute():
+                        val_str = str(p.resolve())
+                    else:
+                        val_str = os.path.normpath(val_str)
                 except Exception:
                     pass
             result = result.replace(f"{{{k}}}", val_str)

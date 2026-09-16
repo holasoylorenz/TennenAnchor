@@ -85,6 +85,11 @@
           "text": "{path}",
           "press_enter": true,
           "wait_ms": 1000
+        },
+        {
+          "action": "press_key",
+          "target": "space",
+          "wait_ms": 300
         }
       ]
     },

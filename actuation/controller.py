@@ -178,12 +178,41 @@ class DesktopController:
         except Exception as e:
             return {"status": "error", "error": str(e)}
 
-    def type_text(self, text: str, press_enter: bool = False, target_hwnd: Optional[int] = None) -> Dict[str, Any]:
-        """Types text with optional enter key. Focuses target window if hwnd is provided."""
+    def type_text(
+        self,
+        text: str,
+        press_enter: bool = False,
+        target_hwnd: Optional[int] = None,
+        use_paste: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Types or pastes text with optional enter key. Focuses target window if hwnd is provided.
+        Uses clipboard paste if use_paste=True or if text contains file path characters,
+        avoiding character drops or layout mangling (e.g. on German DEU keyboards).
+        """
         import pyautogui
 
         if target_hwnd:
             self.force_focus_window(target_hwnd, allow_descendant=True)
+
+        is_path_like = (":\\" in text) or (":/" in text) or ("\\" in text) or ("/" in text and len(text) > 3)
+        if use_paste or is_path_like:
+            try:
+                import pyperclip
+                pyperclip.copy(text)
+                time.sleep(0.05)
+                pyautogui.hotkey("ctrl", "v")
+                time.sleep(0.05)
+                if press_enter:
+                    pyautogui.press("enter")
+                return {
+                    "status": "ok",
+                    "action": "paste",
+                    "length": len(text),
+                    "pressed_enter": press_enter,
+                }
+            except Exception as e:
+                logger.debug("Clipboard paste fallback to typewrite: %s", e)
 
         try:
             pyautogui.typewrite(text, interval=0.015)

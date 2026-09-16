@@ -1,0 +1,235 @@
+{
+  "version": "1.0",
+  "description": "Empirical topological metadata ledger of verified clean LTspice schematics.",
+  "verified_schematics_count": 16,
+  "design_rules": {
+    "grid_alignment_px": 16,
+    "min_horizontal_column_pitch_px": 128,
+    "min_vertical_tier_pitch_px": 96,
+    "pin_offset_invariants": {
+      "resistor_horizontal_r90": {
+        "pin_b_dx": -96,
+        "pin_a_dx": -16,
+        "dy": 16
+      },
+      "capacitor_vertical_r0": {
+        "pin_a_dy": 0,
+        "pin_b_dy": 64,
+        "dx": 16
+      },
+      "voltage_source_r0": {
+        "pin_plus_dy": 16,
+        "pin_minus_dy": 96,
+        "dx": 0
+      },
+      "mosfet_nmos_r0": {
+        "drain": [
+          48,
+          0
+        ],
+        "gate": [
+          0,
+          80
+        ],
+        "source": [
+          48,
+          96
+        ]
+      },
+      "mosfet_pmos_m180": {
+        "source": [
+          48,
+          -96
+        ],
+        "gate": [
+          0,
+          -80
+        ],
+        "drain": [
+          48,
+          0
+        ]
+      }
+    },
+    "no_forced_window_coordinates": true,
+    "clipboard_paste_path_resolution": true
+  },
+  "corpus": [
+    {
+      "name": "amplifier",
+      "relative_path": "outputs/amplifier.asc",
+      "quality_score": 100,
+      "components_count": 7,
+      "wires_count": 18,
+      "flags_count": 11,
+      "total_pins": 17,
+      "directives_count": 2,
+      "is_clean": true
+    },
+    {
+      "name": "bandpass_filter",
+      "relative_path": "outputs/bandpass_filter.asc",
+      "quality_score": 100,
+      "components_count": 7,
+      "wires_count": 20,
+      "flags_count": 7,
+      "total_pins": 17,
+      "directives_count": 4,
+      "is_clean": true
+    },
+    {
+      "name": "bjt_amplifier",
+      "relative_path": "outputs/bjt_amplifier.asc",
+      "quality_score": 100,
+      "components_count": 10,
+      "wires_count": 22,
+      "flags_count": 4,
+      "total_pins": 21,
+      "directives_count": 4,
+      "is_clean": true
+    },
+    {
+      "name": "buck_boost",
+      "relative_path": "outputs/buck_boost.asc",
+      "quality_score": 100,
+      "components_count": 7,
+      "wires_count": 14,
+      "flags_count": 9,
+      "total_pins": 16,
+      "directives_count": 8,
+      "is_clean": true
+    },
+    {
+      "name": "common_source_amp",
+      "relative_path": "outputs/common_source_amp.asc",
+      "quality_score": 100,
+      "components_count": 11,
+      "wires_count": 25,
+      "flags_count": 5,
+      "total_pins": 23,
+      "directives_count": 6,
+      "is_clean": true
+    },
+    {
+      "name": "carrier_gen",
+      "relative_path": "outputs/hierarchical/carrier_gen.asc",
+      "quality_score": 100,
+      "components_count": 3,
+      "wires_count": 6,
+      "flags_count": 6,
+      "total_pins": 6,
+      "directives_count": 0,
+      "is_clean": true
+    },
+    {
+      "name": "opamp_core",
+      "relative_path": "outputs/hierarchical/opamp_core.asc",
+      "quality_score": 100,
+      "components_count": 14,
+      "wires_count": 40,
+      "flags_count": 14,
+      "total_pins": 36,
+      "directives_count": 8,
+      "is_clean": true
+    },
+    {
+      "name": "power_stage",
+      "relative_path": "outputs/hierarchical/power_stage.asc",
+      "quality_score": 100,
+      "components_count": 6,
+      "wires_count": 12,
+      "flags_count": 7,
+      "total_pins": 12,
+      "directives_count": 0,
+      "is_clean": true
+    },
+    {
+      "name": "pwm_modulator",
+      "relative_path": "outputs/hierarchical/pwm_modulator.asc",
+      "quality_score": 100,
+      "components_count": 4,
+      "wires_count": 8,
+      "flags_count": 8,
+      "total_pins": 8,
+      "directives_count": 0,
+      "is_clean": true
+    },
+    {
+      "name": "smps_buck",
+      "relative_path": "outputs/hierarchical/smps_buck.asc",
+      "quality_score": 100,
+      "components_count": 3,
+      "wires_count": 5,
+      "flags_count": 5,
+      "total_pins": 6,
+      "directives_count": 0,
+      "is_clean": true
+    },
+    {
+      "name": "top_active_filter",
+      "relative_path": "outputs/hierarchical/top_active_filter.asc",
+      "quality_score": 100,
+      "components_count": 5,
+      "wires_count": 20,
+      "flags_count": 6,
+      "total_pins": 13,
+      "directives_count": 5,
+      "is_clean": true
+    },
+    {
+      "name": "top_class_d",
+      "relative_path": "outputs/hierarchical/top_class_d.asc",
+      "quality_score": 100,
+      "components_count": 5,
+      "wires_count": 19,
+      "flags_count": 10,
+      "total_pins": 18,
+      "directives_count": 7,
+      "is_clean": true
+    },
+    {
+      "name": "miller_ota",
+      "relative_path": "outputs/miller_ota.asc",
+      "quality_score": 100,
+      "components_count": 14,
+      "wires_count": 40,
+      "flags_count": 14,
+      "total_pins": 36,
+      "directives_count": 8,
+      "is_clean": true
+    },
+    {
+      "name": "rc_filter",
+      "relative_path": "outputs/rc_filter.asc",
+      "quality_score": 100,
+      "components_count": 3,
+      "wires_count": 6,
+      "flags_count": 4,
+      "total_pins": 6,
+      "directives_count": 3,
+      "is_clean": true
+    },
+    {
+      "name": "small_signal_ota",
+      "relative_path": "outputs/small_signal_ota.asc",
+      "quality_score": 100,
+      "components_count": 8,
+      "wires_count": 21,
+      "flags_count": 8,
+      "total_pins": 20,
+      "directives_count": 9,
+      "is_clean": true
+    },
+    {
+      "name": "voltage_reference",
+      "relative_path": "outputs/voltage_reference.asc",
+      "quality_score": 100,
+      "components_count": 5,
+      "wires_count": 13,
+      "flags_count": 3,
+      "total_pins": 10,
+      "directives_count": 4,
+      "is_clean": true
+    }
+  ]
+}

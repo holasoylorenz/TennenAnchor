@@ -260,6 +260,24 @@ TOOLS = [
             },
         },
     },
+    {
+        "name": "app_lint_circuit",
+        "description": (
+            "Validates an LTspice schematic (.asc) file for physical design rules: "
+            "identifies floating/unconnected component pins, detects component collisions, "
+            "and computes an overall layout cleanliness score (0 to 100)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Path to the .asc schematic file to validate.",
+                },
+            },
+        },
+    },
 ]
 
 
@@ -526,6 +544,9 @@ def handle_app_design_circuit(params: Dict[str, Any]) -> str:
         build_buck_boost_schematic,
         build_cmos_miller_ota_schematic,
         build_small_signal_miller_schematic,
+        build_bandpass_filter_schematic,
+        build_voltage_reference_schematic,
+        build_bjt_amplifier_schematic,
     )
     circuit_type = params.get("circuit_type", "rc_filter")
     c_params = params.get("params", {}) or {}
@@ -541,6 +562,24 @@ def handle_app_design_circuit(params: Dict[str, Any]) -> str:
         sch = build_cmos_miller_ota_schematic(**c_params)
     elif circuit_type == "small_signal_ota":
         sch = build_small_signal_miller_schematic(**c_params)
+    elif circuit_type == "bandpass_filter":
+        sch = build_bandpass_filter_schematic(**c_params)
+    elif circuit_type == "voltage_reference":
+        sch = build_voltage_reference_schematic(**c_params)
+    elif circuit_type in ("bjt_amplifier", "bjt_audio_amp"):
+        sch = build_bjt_amplifier_schematic(**c_params)
+    elif circuit_type in ("hierarchical_filter", "active_filter"):
+        from core.circuit_builder import build_hierarchical_active_filter_schematic
+        top, sub = build_hierarchical_active_filter_schematic(**c_params)
+        top_path = out_path.parent / "hierarchical" / "top_active_filter.asc"
+        sub_path = out_path.parent / "hierarchical" / "opamp_core.asc"
+        return (
+            f"[CIRCUIT SYNTHESIZED: {circuit_type} (Hierarchical)]\n"
+            f"Top Schematic: {top_path}\n"
+            f"Subcircuit Block: {sub_path}\n"
+            f"Components: {len(top.symbols)} top symbols, {len(sub.symbols)} sub symbols\n"
+            f"Ready to simulate via: app_execute_recipe(app='ltspice', recipe='open_schematic', params={{'path': r'{top_path}'}})"
+        )
     else:
         return f"Error: Unknown circuit_type '{circuit_type}'"
 
@@ -552,6 +591,45 @@ def handle_app_design_circuit(params: Dict[str, Any]) -> str:
         f"Directives: {len(sch.directives)} text lines\n"
         f"Ready to simulate via: app_execute_recipe(app='ltspice', recipe='open_schematic', params={{'path': r'{out_path}'}})"
     )
+
+
+def handle_app_lint_circuit(params: Dict[str, Any]) -> str:
+    """Validates an LTspice schematic for floating pins, collisions, and clean layout."""
+    from core.circuit_linter import CircuitLinter
+    from pathlib import Path
+
+    path_str = params.get("path", "")
+    if not path_str:
+        return "Error: 'path' parameter is required."
+
+    linter = CircuitLinter()
+    res = linter.lint_file(path_str)
+    if res.get("status") == "error":
+        return f"Error: {res.get('error')}"
+
+    score = res["quality_score"]
+    clean = res["is_clean"]
+    unconn = res["unconnected_pins"]
+    colls = res["collisions"]
+
+    lines = [
+        f"[CIRCUIT LINT REPORT: {Path(path_str).name}]",
+        f"Quality Score : {score}/100",
+        f"Cleanliness   : {'PASSED (Clean, 0 Floating Pins)' if clean else 'FAILED (Design Rule Violations)'}",
+        f"Components    : {res['components_count']}",
+        f"Wires         : {res['wires_count']} segments",
+        f"Total Pins    : {res['total_pins']}",
+    ]
+    if unconn:
+        lines.append("\nUnconnected / Floating Pins:")
+        for u in unconn:
+            lines.append(f"  - {u['component']} pin '{u['pin']}' at {u['location']}")
+    if colls:
+        lines.append("\nComponent Collisions (Overlaps):")
+        for c in colls:
+            lines.append(f"  - {c['component1']} overlaps {c['component2']}")
+
+    return "\n".join(lines)
 
 
 def process_json_rpc(request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -609,6 +687,8 @@ def process_json_rpc(request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                 raw_out = handle_app_record_struggle(arguments)
             elif tool_name == "app_design_circuit":
                 raw_out = handle_app_design_circuit(arguments)
+            elif tool_name == "app_lint_circuit":
+                raw_out = handle_app_lint_circuit(arguments)
             else:
                 return {
                     "jsonrpc": "2.0",

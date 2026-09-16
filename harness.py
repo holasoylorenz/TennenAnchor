@@ -268,6 +268,46 @@ def cmd_agent(args: argparse.Namespace) -> None:
             break
 
 
+def cmd_lint(args: argparse.Namespace) -> None:
+    """Validates schematic files against physical design rules and compiles metadata ledger."""
+    from core.circuit_linter import CircuitLinter
+    from core.circuit_builder import build_circuit_topology_metadata_ledger
+    from pathlib import Path
+
+    linter = CircuitLinter()
+    if args.path:
+        target = Path(args.path)
+        if target.is_dir():
+            files = sorted(list(target.glob("*.asc")) + list(target.glob("*/*.asc")))
+        else:
+            files = [target]
+    else:
+        files = sorted(list(Path("outputs").glob("*.asc")) + list(Path("outputs").glob("*/*.asc")))
+
+    print("\n--- Circuit Schematic Topology & Cleanliness Audit ---")
+    print(f"{'Schematic File':<32} {'Score':>5} {'Clean':<6} {'Pins':>5} {'Wires':>6} {'Unconnected':>11} {'Collisions':>10}")
+    print("-" * 82)
+
+    for f in files:
+        res = linter.lint_file(f)
+        if res.get("status") == "error":
+            print(f"{f.name:<32} ERROR: {res.get('error')}")
+            continue
+
+        score = res["quality_score"]
+        clean = "PASS" if res["is_clean"] else "FAIL"
+        pins = res["total_pins"]
+        wires = res["wires_count"]
+        unconn = len(res["unconnected_pins"])
+        colls = len(res["collisions"])
+        print(f"{f.name:<32} {score:>5} {clean:<6} {pins:>5} {wires:>6} {unconn:>11} {colls:>10}")
+
+    print("-" * 82)
+
+    ledger = build_circuit_topology_metadata_ledger()
+    print(f"Topology Metadata Ledger: knowledge/circuit_topology_metadata.json ({ledger['verified_schematics_count']} verified clean designs)\n")
+
+
 def main() -> None:
     init_dpi_awareness()
     parser = argparse.ArgumentParser(description="TennenAnchor CLI — Windows Computer-Use Runtime & Tool Broker")
@@ -276,6 +316,10 @@ def main() -> None:
     # Agent (Local LLM Autonomous Agent)
     p_agent = subparsers.add_parser("agent", help="Run local autonomous agent (Gemma 4 E4B + CUDA GPU)")
     p_agent.add_argument("goal", nargs="*", help="Goal for the agent to execute (leave empty for interactive chat)")
+
+    # Lint
+    p_lint = subparsers.add_parser("lint", help="Lint schematics for floating pins, collisions, and compile metadata")
+    p_lint.add_argument("path", nargs="?", default=None, help="Path to .asc file or folder (default: outputs/)")
 
     # Inspect
     p_inspect = subparsers.add_parser("inspect", help="Inspect active foreground window")
@@ -318,6 +362,8 @@ def main() -> None:
 
     if args.command == "agent":
         cmd_agent(args)
+    elif args.command == "lint":
+        cmd_lint(args)
     elif args.command == "inspect":
         cmd_inspect(args)
     elif args.command == "escalate":

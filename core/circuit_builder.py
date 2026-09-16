@@ -550,3 +550,52 @@ def build_buck_boost_schematic(
 
     return sch
 
+
+def build_rc_filter_schematic(
+    r_kohm: float = 10.0,
+    c_nf: float = 100.0,
+    ac_mag: float = 1.0,
+) -> LTspiceSchematic:
+    """
+    Synthesizes a first-order passive RC Low-Pass Filter schematic for LTspice.
+    Cutoff frequency: fc = 1 / (2 * pi * R * C)
+    """
+    import math
+    sch = LTspiceSchematic(sheet_width=900, sheet_height=600, grid_size=8)
+    fc_hz = 1.0 / (2.0 * math.pi * (r_kohm * 1e3) * (c_nf * 1e-9))
+
+    # 1. AC Voltage Source at (112, 176)
+    sch.add_symbol("voltage", 112, 176, "R0", inst_name="Vin", value="0", value2=f"AC {ac_mag}")
+    sch.add_wire(112, 128, 112, 176)
+    sch.add_flag(112, 128, "VIN")
+    sch.add_wire(112, 256, 112, 304)
+    sch.add_flag(112, 304, "0")
+
+    # 2. Resistor R1 from (112, 128) horizontally to (272, 128)
+    # Under R90 / R270: horizontal orientation
+    sch.add_wire(112, 128, 176, 128)
+    sch.add_symbol("res", 176, 144, "R90", inst_name="R1", value=f"{r_kohm:.1f}k")
+    sch.add_wire(256, 128, 272, 128)
+
+    # 3. Output Node VOUT at (272, 128)
+    sch.add_flag(272, 128, "VOUT")
+
+    # 4. Capacitor C1 from (272, 128) down to Ground at (272, 304)
+    sch.add_wire(272, 128, 272, 208)
+    sch.add_symbol("cap", 256, 208, "R0", inst_name="C1", value=f"{c_nf:.1f}n")
+    sch.add_wire(272, 272, 272, 304)
+    sch.add_flag(272, 304, "0")
+
+    # 5. Directives & Measurements
+    directives = [
+        f";RC Low-Pass Filter (R = {r_kohm}k, C = {c_nf}nF)",
+        f";Theoretical -3dB Cutoff: fc = {fc_hz:.1f} Hz",
+        ".ac dec 50 1 100k",
+        ".meas AC fc WHEN mag(V(VOUT))=0.7071",
+        ".meas AC A0 FIND mag(V(VOUT)) AT 1",
+    ]
+    sch.add_directive_block(start_x=80, start_y=360, lines=directives, line_height=32)
+
+    return sch
+
+

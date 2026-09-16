@@ -88,20 +88,21 @@ class LocalMCPAgent:
             "- desktop_step(action='click', ...): act and re-inspect\n"
             "- app_execute_recipe(app='chrome', recipe='new_tab'): open new browser tab\n"
             "- app_execute_recipe(app='chrome', recipe='navigate', params={'url': '...'}): browse to URL\n"
+            "- app_design_circuit(circuit_type='rc_filter'|'buck_boost'|'cmos_ota', params={...}, output_path='outputs/name.asc'): synthesize schematic\n"
             "- app_execute_recipe(app='ltspice', recipe='open_schematic', params={'path': '...'}): load circuit\n"
             "- app_execute_recipe(app='ltspice', recipe='run_simulation'): run SPICE simulation\n"
+            "- app_record_struggle(app='ltspice', action='...', symptom='...', resolution='...'): log notes on failure/quirks\n"
             "- app_query(app='ltspice'): query app states and recipes\n\n"
             "INSTRUCTIONS:\n"
-            "1. When the user asks you to interact with the screen or PC, call a tool immediately on Turn 1.\n"
+            "1. When the user asks you to design, simulate, or interact with circuits/PC, call a tool immediately on Turn 1.\n"
             "2. To perform an action, output:\n"
             "ACTION: tool_name(argument=value)\n"
             "Examples:\n"
-            "  ACTION: desktop_inspect()\n"
-            "  ACTION: app_execute_recipe(app='chrome', recipe='new_tab')\n"
-            "  ACTION: app_execute_recipe(app='chrome', recipe='navigate', params={'url': 'https://google.com'})\n"
-            "  ACTION: app_execute_recipe(app='ltspice', recipe='open_schematic', params={'path': 'C:/path/circuit.asc'})\n"
-            "3. After receiving the tool observation, evaluate if the task is complete. If it is NOT complete, take the next action.\n"
-            "4. IMPORTANT: Once you have completed the user's request and verified the result, clearly state 'TASK COMPLETE: <reason>' and stop calling tools.\n"
+            "  ACTION: app_design_circuit(circuit_type='rc_filter', params={'r_kohm': 10, 'c_nf': 100}, output_path='outputs/rc_filter.asc')\n"
+            "  ACTION: app_execute_recipe(app='ltspice', recipe='open_schematic', params={'path': 'outputs/rc_filter.asc'})\n"
+            "  ACTION: app_execute_recipe(app='ltspice', recipe='run_simulation')\n"
+            "3. After each step, observe the result. Take short notes on whether the step was a SUCCESS or FAILURE.\n"
+            "4. IMPORTANT: Once you have completed the circuit design, opened it, and simulated it, output a short summary with your SUCCESS/FAILURE notes and state 'TASK COMPLETE: <reason>'.\n"
         )
 
     def check_connection(self) -> str:
@@ -147,11 +148,9 @@ class LocalMCPAgent:
         return result_text
 
     def call_llm(self, messages: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Queries the local llama-server."""
+        """Queries the local llama-server with lean text prompts (avoiding 2000-token JSON schema CPU bottleneck)."""
         payload = {
             "messages": messages,
-            "tools": self.tools,
-            "tool_choice": "auto",
             "temperature": 0.1,
             "max_tokens": 1024,
         }
@@ -161,7 +160,7 @@ class LocalMCPAgent:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=90) as resp:
+        with urllib.request.urlopen(req, timeout=120) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             return data["choices"][0]["message"]
 

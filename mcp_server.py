@@ -518,6 +518,42 @@ def handle_app_record_struggle(params: Dict[str, Any]) -> str:
     return f"Friction logged: {ev.id} for {ev.app} (Total hits: {ev.occurrences})"
 
 
+def handle_app_design_circuit(params: Dict[str, Any]) -> str:
+    """Synthesizes a circuit schematic and saves it to disk."""
+    from pathlib import Path
+    from core.circuit_builder import (
+        build_rc_filter_schematic,
+        build_buck_boost_schematic,
+        build_cmos_miller_ota_schematic,
+        build_small_signal_miller_schematic,
+    )
+    circuit_type = params.get("circuit_type", "rc_filter")
+    c_params = params.get("params", {}) or {}
+    out_path_str = params.get("output_path") or f"outputs/{circuit_type}.asc"
+    out_path = Path(out_path_str).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if circuit_type == "rc_filter":
+        sch = build_rc_filter_schematic(**c_params)
+    elif circuit_type == "buck_boost":
+        sch = build_buck_boost_schematic(**c_params)
+    elif circuit_type == "cmos_ota":
+        sch = build_cmos_miller_ota_schematic(**c_params)
+    elif circuit_type == "small_signal_ota":
+        sch = build_small_signal_miller_schematic(**c_params)
+    else:
+        return f"Error: Unknown circuit_type '{circuit_type}'"
+
+    sch.save(out_path)
+    return (
+        f"[CIRCUIT SYNTHESIZED: {circuit_type}]\n"
+        f"File: {out_path}\n"
+        f"Components: {len(sch.symbols)} symbols, {len(sch.wires)} wires, {len(sch.flags)} flags\n"
+        f"Directives: {len(sch.directives)} text lines\n"
+        f"Ready to simulate via: app_execute_recipe(app='ltspice', recipe='open_schematic', params={{'path': r'{out_path}'}})"
+    )
+
+
 def process_json_rpc(request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Processes incoming JSON-RPC 2.0 requests from AGY CLI."""
     method = request.get("method")
@@ -571,6 +607,8 @@ def process_json_rpc(request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                 raw_out = handle_app_execute_recipe(arguments)
             elif tool_name == "app_record_struggle":
                 raw_out = handle_app_record_struggle(arguments)
+            elif tool_name == "app_design_circuit":
+                raw_out = handle_app_design_circuit(arguments)
             else:
                 return {
                     "jsonrpc": "2.0",

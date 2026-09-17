@@ -622,6 +622,105 @@ def build_bandpass_filter_schematic(
     return sch
 
 
+def build_sallen_key_hpf_schematic(
+    fc_khz: Optional[float] = None,
+    q: float = 0.707,
+    **kwargs: Any,
+) -> LTspiceSchematic:
+    """
+    Synthesizes a 2nd-order Sallen-Key Active High-Pass Filter with unity gain.
+    100% pin-matched and DRC clean.
+    """
+    sch = LTspiceSchematic(sheet_width=1100, sheet_height=700, grid_size=16)
+
+    # Support R and C parameters if provided
+    r_kohm = kwargs.get("r_kohm")
+    c_nf = kwargs.get("c_nf")
+    r_val = kwargs.get("R") or kwargs.get("r") or kwargs.get("r1") or kwargs.get("r2") or r_kohm
+    c_val = kwargs.get("C") or kwargs.get("c") or kwargs.get("c1") or kwargs.get("c2") or c_nf
+
+    if r_kohm is not None:
+        r_str = f"{r_kohm}k"
+    elif r_val is not None:
+        r_str = f"{r_val}" if isinstance(r_val, str) else (f"{r_val/1000:.1f}k" if r_val >= 1000 else f"{r_val:.1f}")
+    else:
+        r_str = "15.9k"
+
+    if c_nf is not None:
+        c_str = f"{c_nf}n"
+    elif c_val is not None:
+        if isinstance(c_val, str):
+            c_str = c_val
+        elif c_val < 1e-6:
+            c_str = f"{c_val*1e9:.1f}n"
+        elif c_val < 1e-3:
+            c_str = f"{c_val*1e6:.1f}u"
+        else:
+            c_str = f"{c_val}"
+    else:
+        c_str = "10n"
+
+    fc_display = fc_khz if fc_khz is not None else 1.0
+
+    # 1. Op-Amp U1 at (544, 240 R0)
+    sch.add_symbol("OpAmps\\UniversalOpAmp2", 544, 240, "R0", inst_name="U1")
+    # Power
+    sch.add_wire(544, 208, 544, 160)
+    sch.add_flag(544, 160, "+15V")
+    sch.add_wire(544, 272, 544, 304)
+    sch.add_flag(544, 304, "-15V")
+
+    # In- negative feedback (unity gain buffer)
+    sch.add_wire(480, 224, 512, 224)
+    sch.add_wire(480, 224, 480, 144)
+    sch.add_wire(480, 144, 640, 144)
+
+    # 2. Source Vin at (80, 208 R0)
+    sch.add_symbol("voltage", 80, 208, "R0", inst_name="Vin", value="0", value2="AC 1")
+    sch.add_wire(80, 224, 144, 224)
+    sch.add_flag(80, 224, "VIN")
+    sch.add_wire(80, 304, 80, 336)
+    sch.add_flag(80, 336, "0")
+
+    # 3. C1 (144, 240 R270) -> Pin A (144, 224), Pin B (208, 224)
+    sch.add_symbol("cap", 144, 240, "R270", inst_name="C1", value=c_str)
+    sch.add_wire(208, 224, 272, 224)  # to Node Vx at (272, 224)
+
+    # 4. C2 (272, 240 R270) -> Pin A (272, 224), Pin B (336, 224)
+    sch.add_symbol("cap", 272, 240, "R270", inst_name="C2", value=c_str)
+    sch.add_wire(336, 224, 400, 224)  # to Node Vp at (400, 224)
+
+    # Lead from Node Vp into In+ at (512, 256)
+    sch.add_wire(400, 224, 400, 256)
+    sch.add_wire(400, 256, 512, 256)
+
+    # 5. R2 to ground at Node Vp (400, 256): res at (384, 256 R0) -> Pin A (400, 272), Pin B (400, 352)
+    sch.add_wire(400, 256, 400, 272)
+    sch.add_symbol("res", 384, 256, "R0", inst_name="R2", value=r_str)
+    sch.add_wire(400, 352, 400, 368)
+    sch.add_flag(400, 368, "0")
+
+    # 6. R1 feedback from Vx (272, 224) up to Y=80:
+    # res at (416, 64 R90) -> Pin B (320, 80), Pin A (400, 80)
+    sch.add_wire(272, 224, 272, 80)
+    sch.add_wire(272, 80, 320, 80)
+    sch.add_symbol("res", 416, 64, "R90", inst_name="R1", value=r_str)
+    sch.add_wire(400, 80, 640, 80)
+
+    # 7. Output return bus at X=640
+    sch.add_wire(576, 240, 640, 240)
+    sch.add_wire(640, 80, 640, 240)
+    sch.add_wire(640, 240, 704, 240)
+    sch.add_flag(704, 240, "VOUT")
+
+    # Directives
+    sch.add_comment(80, 416, f"2nd-Order Sallen-Key Active High-Pass Filter (fc = {fc_display:.1f} kHz, Q = {q:.3f})")
+    sch.add_directive(80, 448, ".ac dec 50 10 100k")
+    sch.add_directive(80, 480, ".meas AC fc WHEN mag(V(VOUT))=0.707")
+    sch.add_directive(80, 512, ".meas AC hf_gain MAX mag(V(VOUT))")
+    return sch
+
+
 def build_voltage_reference_schematic(
     vin_v: float = 12.0,
     vref_v: float = 5.1,

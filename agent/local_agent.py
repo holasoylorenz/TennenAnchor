@@ -47,11 +47,38 @@ def format_mcp_tools_for_openai() -> List[Dict[str, Any]]:
 
 def parse_text_action(text: str) -> Optional[Tuple[str, Dict[str, Any]]]:
     """Parses text-based action calls like: ACTION: tool_name(arg1=val1, arg2=val2)"""
-    m = re.search(r"ACTION:\s*([a-zA-Z0-9_]+)\s*\((.*?)\)", text, re.DOTALL)
+    m = re.search(r"ACTION:\s*([a-zA-Z0-9_]+)\s*\(", text)
     if not m:
         return None
     tool_name = m.group(1).strip()
-    args_raw = m.group(2).strip()
+    start_idx = m.end()
+
+    # Find matching closing parenthesis, respecting nested strings and brackets
+    paren_depth = 1
+    in_quote: Optional[str] = None
+    args_end = -1
+    for i in range(start_idx, len(text)):
+        ch = text[i]
+        if in_quote:
+            if ch == in_quote and text[i - 1] != "\\":
+                in_quote = None
+        else:
+            if ch in ('"', "'"):
+                in_quote = ch
+            elif ch in ("(", "[", "{"):
+                paren_depth += 1
+            elif ch in (")", "]", "}"):
+                paren_depth -= 1
+                if paren_depth == 0:
+                    args_end = i
+                    break
+
+    if args_end == -1:
+        args_end = text.rfind(")")
+        if args_end <= start_idx:
+            return tool_name, {}
+
+    args_raw = text[start_idx:args_end].strip()
     if not args_raw:
         return tool_name, {}
 
@@ -88,10 +115,11 @@ class LocalMCPAgent:
             "- desktop_step(action='click', ...): act and re-inspect\n"
             "- app_execute_recipe(app='chrome', recipe='new_tab'): open new browser tab\n"
             "- app_execute_recipe(app='chrome', recipe='navigate', params={'url': '...'}): browse to URL\n"
-            "- app_design_circuit(circuit_type='rc_filter'|'buck_boost'|'cmos_ota'|'small_signal_ota'|'bandpass_filter'|'voltage_reference'|'bjt_amplifier'|'hierarchical_filter', params={...}, output_path='outputs/name.asc'): synthesize schematic\n"
+            "- app_design_circuit(circuit_type='sallen_key_hpf'|'bandpass_filter'|'rc_filter'|'buck_boost'|'cmos_ota'|'small_signal_ota'|'voltage_reference'|'bjt_amplifier'|'hierarchical_filter', params={...}, output_path='outputs/name.asc'): synthesize schematic\n"
             "- app_lint_circuit(path='outputs/name.asc'): validate schematic layout, check for unconnected pins and collisions\n"
             "- app_execute_recipe(app='ltspice', recipe='open_schematic', params={'path': '...'}): load circuit\n"
             "- app_execute_recipe(app='ltspice', recipe='run_simulation'): run SPICE simulation\n"
+            "- app_execute_recipe(app='ltspice', recipe='plot_trace', params={'trace': 'V(vout)'}): plot waveform trace\n"
             "- app_record_struggle(app='ltspice', action='...', symptom='...', resolution='...'): log notes on failure/quirks\n"
             "- app_query(app='ltspice'): query app states and recipes\n\n"
             "INSTRUCTIONS:\n"

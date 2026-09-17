@@ -265,7 +265,7 @@ TOOLS = [
         "description": (
             "Synthesizes an LTspice schematic (.asc) with DRC-verified orthogonal layout, "
             "planar feedback routing, and simulation directives. "
-            "Supports 'bandpass_filter', 'rc_filter', 'buck_boost', 'cmos_ota', 'small_signal_ota', "
+            "Supports 'bandpass_filter', 'sallen_key_hpf', 'rc_filter', 'buck_boost', 'cmos_ota', 'small_signal_ota', "
             "'voltage_reference', 'bjt_amplifier', and 'hierarchical_filter'."
         ),
         "inputSchema": {
@@ -275,6 +275,7 @@ TOOLS = [
                     "type": "string",
                     "enum": [
                         "bandpass_filter",
+                        "sallen_key_hpf",
                         "rc_filter",
                         "buck_boost",
                         "cmos_ota",
@@ -537,6 +538,9 @@ def handle_app_execute_recipe(params: Dict[str, Any]) -> str:
     """Executes a pre-compiled App-AST recipe."""
     app_id = params.get("app")
     recipe_id = params.get("recipe")
+    if not app_id or not recipe_id:
+        return "Error: Both 'app' and 'recipe' parameters are required (e.g. app='ltspice', recipe='plot_trace', params={'trace': 'V(vout)'})."
+
     recipe_params = params.get("params", {})
     record = params.get("record", False)
 
@@ -603,6 +607,7 @@ def handle_app_design_circuit(params: Dict[str, Any]) -> str:
         build_cmos_miller_ota_schematic,
         build_small_signal_miller_schematic,
         build_bandpass_filter_schematic,
+        build_sallen_key_hpf_schematic,
         build_voltage_reference_schematic,
         build_bjt_amplifier_schematic,
     )
@@ -622,6 +627,8 @@ def handle_app_design_circuit(params: Dict[str, Any]) -> str:
         sch = build_small_signal_miller_schematic(**c_params)
     elif circuit_type == "bandpass_filter":
         sch = build_bandpass_filter_schematic(**c_params)
+    elif circuit_type == "sallen_key_hpf":
+        sch = build_sallen_key_hpf_schematic(**c_params)
     elif circuit_type == "voltage_reference":
         sch = build_voltage_reference_schematic(**c_params)
     elif circuit_type in ("bjt_amplifier", "bjt_audio_amp"):

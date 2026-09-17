@@ -160,22 +160,23 @@ class EmergentLayoutSolver:
             if len(stages["input"]) > 1:
                 comp_coords[stages["input"][1].name] = (320, 240)
 
-            # 5. Core Active Stage (U1 Op-Amp at X=480, Y=240 R0)
+            # 5. Core Active Stage (U1 Op-Amp at X=544, Y=240 R0)
+            # Placing core at X=544 leaves 64px horizontal clearance for input stubs (X=448 to 512)
             for comp in stages["core"]:
-                comp_coords[comp.name] = (480, 240)
+                comp_coords[comp.name] = (544, 240)
 
             # 6. Planar Feedback Allocation (Nested Elevation Theorem)
             # Outer loop taps earlier (N_mid at X=272) -> higher tier Y=80
             # Inner loop taps later (IN_NEG at X=448) -> lower tier Y=144
             for comp in stages["feedback"]:
                 if "c" in comp.name.lower():
-                    # C2 Outer Loop (X=352, Y=96 R270 -> spans 352 to 416 at Y=80)
-                    comp_coords[comp.name] = (352, 96)
+                    # C2 Outer Loop (X=384, Y=96 R270 -> spans 384 to 448 at Y=80)
+                    comp_coords[comp.name] = (384, 96)
                 else:
-                    # R3 Inner Loop (X=544, Y=128 R90 -> spans 448 to 528 at Y=144)
-                    comp_coords[comp.name] = (544, 128)
+                    # R3 Inner Loop (X=608, Y=128 R90 -> spans 512 to 592 at Y=144)
+                    comp_coords[comp.name] = (608, 128)
 
-            return_bus_x = 560
+            return_bus_x = 640
 
         else:
             # Passive / General Cascade Filter Architecture (e.g. RC, LC, Voltage Divider)
@@ -214,12 +215,12 @@ class EmergentLayoutSolver:
 
         # Wire Routing
         if has_active_core and has_feedback:
-            # Dedicated Planar Multi-Feedback Routing
-            # Power Supplies (+15V, -15V)
-            sch.add_wire(480, 208, 480, 160)
-            sch.add_flag(480, 160, "+15V")
-            sch.add_wire(480, 272, 480, 304)
-            sch.add_flag(480, 304, "-15V")
+            # Dedicated Planar Multi-Feedback Routing with Extended Input Stubs
+            # Power Supplies (+15V, -15V) for Op-Amp at X=544
+            sch.add_wire(544, 208, 544, 160)
+            sch.add_flag(544, 160, "+15V")
+            sch.add_wire(544, 272, 544, 304)
+            sch.add_flag(544, 304, "-15V")
 
             # Input excitation (Vin)
             sch.add_wire(80, 224, 160, 224)
@@ -236,24 +237,30 @@ class EmergentLayoutSolver:
 
             # C2 Outer Loop Tap (Y=80)
             sch.add_wire(272, 224, 272, 80)
-            sch.add_wire(272, 80, 352, 80)
-            sch.add_wire(416, 80, return_bus_x, 80)
+            sch.add_wire(272, 80, 384, 80)
+            sch.add_wire(448, 80, return_bus_x, 80)
 
-            # IN_NEG node (X=448, Y=224): connects C1, U1:IN-, and R3
+            # C1 forward to tap column (X=448, Y=224)
             sch.add_wire(384, 224, 448, 224)
+
             # R3 Inner Loop Tap (Y=144)
             sch.add_wire(448, 224, 448, 144)
-            sch.add_wire(528, 144, return_bus_x, 144)
+            sch.add_wire(448, 144, 512, 144)
+            sch.add_wire(592, 144, return_bus_x, 144)
 
-            # U1:IN+ Non-inverting Ground
+            # U1:IN- Horizontal Input Lead (extends 64px from tap column to op-amp pin at X=512)
+            sch.add_wire(448, 224, 512, 224)
+
+            # U1:IN+ Non-inverting Ground & Horizontal Input Lead
+            sch.add_wire(448, 256, 512, 256)
             sch.add_wire(448, 256, 448, 304)
             sch.add_flag(448, 304, "0")
 
-            # Output return bus (X=560)
-            sch.add_wire(512, 240, return_bus_x, 240)
+            # Output return bus (X=640)
+            sch.add_wire(576, 240, return_bus_x, 240)
             sch.add_wire(return_bus_x, 80, return_bus_x, 240)
-            sch.add_wire(return_bus_x, 240, 624, 240)
-            sch.add_flag(624, 240, "VOUT")
+            sch.add_wire(return_bus_x, 240, 704, 240)
+            sch.add_flag(704, 240, "VOUT")
 
         else:
             # Passive / Cascade Routing

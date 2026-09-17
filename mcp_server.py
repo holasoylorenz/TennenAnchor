@@ -261,6 +261,43 @@ TOOLS = [
         },
     },
     {
+        "name": "app_design_circuit",
+        "description": (
+            "Synthesizes an LTspice schematic (.asc) with DRC-verified orthogonal layout, "
+            "planar feedback routing, and simulation directives. "
+            "Supports 'bandpass_filter', 'rc_filter', 'buck_boost', 'cmos_ota', 'small_signal_ota', "
+            "'voltage_reference', 'bjt_amplifier', and 'hierarchical_filter'."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "circuit_type": {
+                    "type": "string",
+                    "enum": [
+                        "bandpass_filter",
+                        "rc_filter",
+                        "buck_boost",
+                        "cmos_ota",
+                        "small_signal_ota",
+                        "voltage_reference",
+                        "bjt_amplifier",
+                        "hierarchical_filter",
+                    ],
+                    "default": "bandpass_filter",
+                    "description": "Circuit topology type to synthesize.",
+                },
+                "params": {
+                    "type": "object",
+                    "description": "Optional component parameters (e.g. {'f0_khz': 1.0, 'q': 2.0}).",
+                },
+                "output_path": {
+                    "type": "string",
+                    "description": "Destination file path for the .asc schematic (default: 'outputs/<circuit_type>.asc').",
+                },
+            },
+        },
+    },
+    {
         "name": "app_lint_circuit",
         "description": (
             "Validates an LTspice schematic (.asc) file for physical design rules: "

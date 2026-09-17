@@ -552,17 +552,18 @@ def build_bandpass_filter_schematic(
     """
     sch = LTspiceSchematic(sheet_width=1100, sheet_height=700, grid_size=16)
 
-    # 1. OpAmp U1: UniversalOpAmp2 at (480, 240 R0)
-    # In+ (448, 256), In- (448, 224), V+ (480, 208), V- (480, 272), OUT (512, 240)
-    sch.add_symbol("OpAmps\\UniversalOpAmp2", 480, 240, "R0", inst_name="U1")
-    # Ground non-inverting input In+
+    # 1. OpAmp U1: UniversalOpAmp2 at (544, 240 R0)
+    # Left spine at X=512. In+ (512, 256), In- (512, 224), V+ (544, 208), V- (544, 272), OUT (576, 240)
+    sch.add_symbol("OpAmps\\UniversalOpAmp2", 544, 240, "R0", inst_name="U1")
+    # Extended horizontal input leads and non-inverting ground drop
+    sch.add_wire(448, 256, 512, 256)
     sch.add_wire(448, 256, 448, 304)
     sch.add_flag(448, 304, "0")
     # Supply rails
-    sch.add_wire(480, 208, 480, 160)
-    sch.add_flag(480, 160, "+15V")
-    sch.add_wire(480, 272, 480, 304)
-    sch.add_flag(480, 304, "-15V")
+    sch.add_wire(544, 208, 544, 160)
+    sch.add_flag(544, 160, "+15V")
+    sch.add_wire(544, 272, 544, 304)
+    sch.add_flag(544, 304, "-15V")
 
     # 2. Input AC Source at (80, 208 R0): Pin+ (80, 224), Pin- (80, 304)
     sch.add_symbol("voltage", 80, 208, "R0", inst_name="Vin", value="0", value2="AC 1")
@@ -582,31 +583,33 @@ def build_bandpass_filter_schematic(
     sch.add_wire(272, 320, 272, 336)
     sch.add_flag(272, 336, "0")
 
-    # 5. Capacitor C1 (from Vx to In- at 448, 224):
+    # 5. Capacitor C1 (from Vx to In- tap column at 448, 224):
     # C1 at (320, 240 R270): Pin A (320, 224), Pin B (384, 224)
     sch.add_wire(272, 224, 320, 224)
     sch.add_symbol("cap", 320, 240, "R270", inst_name="C1", value="10n")
     sch.add_wire(384, 224, 448, 224)
+    # Horizontal extension lead into In- at (512, 224)
+    sch.add_wire(448, 224, 512, 224)
 
     # 6. Feedback Capacitor C2 (from Vx to VOUT) along Y=80:
-    # C2 at (352, 96 R270): Pin A (352, 80), Pin B (416, 80)
+    # C2 at (384, 96 R270): Pin A (384, 80), Pin B (448, 80)
     sch.add_wire(272, 224, 272, 80)
-    sch.add_wire(272, 80, 352, 80)
-    sch.add_symbol("cap", 352, 96, "R270", inst_name="C2", value="10n")
-    sch.add_wire(416, 80, 560, 80)
-    sch.add_wire(560, 80, 560, 240)
+    sch.add_wire(272, 80, 384, 80)
+    sch.add_symbol("cap", 384, 96, "R270", inst_name="C2", value="10n")
+    sch.add_wire(448, 80, 640, 80)
+    sch.add_wire(640, 80, 640, 240)
 
-    # 7. Feedback Resistor R3 (from In- to VOUT) along Y=144:
-    # R3 at (544, 128 R90): Pin B (448, 144), Pin A (528, 144)
+    # 7. Feedback Resistor R3 (from In- tap at 448 to VOUT) along Y=144:
+    # R3 at (608, 128 R90): Pin B (512, 144), Pin A (592, 144)
     sch.add_wire(448, 224, 448, 144)
-    sch.add_symbol("res", 544, 128, "R90", inst_name="R3", value="47k")
-    sch.add_wire(528, 144, 560, 144)
-    sch.add_wire(560, 144, 560, 240)
+    sch.add_wire(448, 144, 512, 144)
+    sch.add_symbol("res", 608, 128, "R90", inst_name="R3", value="47k")
+    sch.add_wire(592, 144, 640, 144)
 
-    # 8. Output Connection: OpAmp OUT (512, 240) to VOUT
-    sch.add_wire(512, 240, 560, 240)
-    sch.add_wire(560, 240, 624, 240)
-    sch.add_flag(624, 240, "VOUT")
+    # 8. Output Connection: OpAmp OUT (576, 240) to VOUT
+    sch.add_wire(576, 240, 640, 240)
+    sch.add_wire(640, 240, 704, 240)
+    sch.add_flag(704, 240, "VOUT")
 
     # 9. Directives
     directives = [

@@ -58,7 +58,7 @@ def cmd_escalate(args: argparse.Namespace) -> None:
 def cmd_benchmark(args: argparse.Namespace) -> None:
     """Benchmarks perception and screen capture performance across N iterations."""
     from pathlib import Path
-    from scripts.run_benchmarks import run_benchmark, generate_benchmark_markdown
+    from benchmarks.run_benchmarks import run_benchmark, generate_benchmark_markdown
 
     samples = getattr(args, "samples", 25)
     print(f"\n--- Running Empirical Benchmark Suite (N={samples}) ---")
@@ -175,7 +175,41 @@ def cmd_recipe(args: argparse.Namespace) -> None:
         print(f"Artifacts       : {json.dumps(res.get('artifacts'), indent=2)}")
     if res.get("error"):
         print(f"Error           : {res.get('error')}")
-    print("-------------------------------------------\n")
+
+def cmd_policy(args: argparse.Namespace) -> None:
+    """Executes or lists abstract Behavior Tree policies."""
+    from policies.engine import PolicyEngine
+
+    engine = PolicyEngine()
+    if getattr(args, "list_all", False) or not getattr(args, "policy_id", None):
+        policies = engine.list_policies()
+        print("\n--- Registered Abstract Behavior Policies ---")
+        for p in policies:
+            print(f"  • {p['policy_id']} ({p['domain']}): {p['name']}")
+            if p.get('description'):
+                print(f"    {p['description']}")
+        print("---------------------------------------------\n")
+        return
+
+    params: Dict[str, Any] = {}
+    if args.params:
+        for item in args.params:
+            if "=" in item:
+                k, v = item.split("=", 1)
+                params[k.strip()] = v.strip()
+
+    res = engine.execute(policy_id=args.policy_id, params=params)
+    print(f"\n--- Policy Execution: {args.policy_id} ---")
+    print(f"Status          : {res.get('status', '').upper()}")
+    print(f"Execution Time  : {res.get('execution_time_ms')}ms")
+    if res.get("telemetry"):
+        print(f"Telemetry Steps : {len(res['telemetry'])}")
+        for t in res["telemetry"]:
+            b_info = t.get('chosen_branch') or t.get('failed_branch') or t.get('failing_step') or ""
+            print(f"  [{t.get('event')}] node={t.get('node_id')} branch={b_info} latency={t.get('latency_ms', 0):.1f}ms")
+    if res.get("error"):
+        print(f"Error           : {res.get('error')}")
+    print("---------------------------------------------\n")
 
 
 def cmd_launch(args: argparse.Namespace) -> None:
@@ -230,7 +264,7 @@ def cmd_sync(args: argparse.Namespace) -> None:
 
 def cmd_agent(args: argparse.Namespace) -> None:
     """Runs autonomous local LLM agent with direct MCP tools and hardware-optimized execution."""
-    from scripts.run_local_agent import LocalMCPAgent
+    from agent.local_agent import LocalMCPAgent
     agent = LocalMCPAgent()
     try:
         model_name = agent.ensure_server_running()
@@ -349,6 +383,12 @@ def main() -> None:
     p_recipe.add_argument("--params", "-p", nargs="*", help="Key=value parameters (e.g. path=file.asc)")
     p_recipe.add_argument("--record", "-r", action="store_true", help="Record window-scoped animated GIF visual proof")
 
+    # Policy (Behavior Tree Engine)
+    p_policy = subparsers.add_parser("policy", help="Execute an abstract Behavior Tree policy")
+    p_policy.add_argument("policy_id", type=str, nargs="?", default=None, help="Policy ID (e.g. chrome_switch_tab, terminal_switch_tab)")
+    p_policy.add_argument("--params", "-p", nargs="*", help="Key=value parameters (e.g. index=2)")
+    p_policy.add_argument("--list-all", "-l", action="store_true", help="List all registered abstract policies")
+
     # Launch (Lifecycle Broker)
     p_launch = subparsers.add_parser("launch", help="Ensure app is running and focused via Shell COM Broker")
     p_launch.add_argument("app", type=str, help="Application ID (e.g. ltspice)")
@@ -376,6 +416,8 @@ def main() -> None:
         cmd_ast(args)
     elif args.command == "recipe":
         cmd_recipe(args)
+    elif args.command == "policy":
+        cmd_policy(args)
     elif args.command == "launch":
         cmd_launch(args)
     elif args.command == "sync":

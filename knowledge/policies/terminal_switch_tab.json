@@ -1,0 +1,76 @@
+{
+  "policy_id": "terminal_switch_tab",
+  "name": "Windows Terminal Switch Tab",
+  "domain": "terminal",
+  "description": "Switches tabs in Windows Terminal using Ctrl+Alt+N native hotkeys, UIA TabListView selection, or Ctrl+Tab relative cycling without ad-hoc scripts.",
+  "tree": {
+    "type": "selector",
+    "id": "sel_term_tab",
+    "name": "Select Terminal Tab Strategy",
+    "weight": 1.0,
+    "children": [
+      {
+        "type": "sequence",
+        "id": "seq_term_native_shortcut",
+        "name": "Windows Terminal Indexed Shortcut (Ctrl+Alt+N)",
+        "weight": 1.0,
+        "children": [
+          {
+            "type": "condition",
+            "id": "cond_term_index_range",
+            "predicate": {
+              "type": "in_range",
+              "var": "index",
+              "min": 1,
+              "max": 9
+            }
+          },
+          {
+            "type": "action",
+            "id": "act_ctrl_alt_n",
+            "action": {
+              "type": "hotkey",
+              "keys": ["ctrl", "alt", "{index}"],
+              "wait_ms": 200
+            }
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "id": "seq_term_uia_select",
+        "name": "UIA TabListView Item Selection",
+        "weight": 0.85,
+        "children": [
+          {
+            "type": "action",
+            "id": "act_term_uia_select",
+            "action": {
+              "type": "uia_select",
+              "control_type": "TabItem",
+              "index": "{index}",
+              "wait_ms": 250
+            }
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "id": "seq_term_ctrl_tab",
+        "name": "Sequential Tab Cycling Fallback",
+        "weight": 0.5,
+        "children": [
+          {
+            "type": "action",
+            "id": "act_term_ctrl_tab",
+            "action": {
+              "type": "hotkey",
+              "keys": ["ctrl", "tab"],
+              "wait_ms": 200
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

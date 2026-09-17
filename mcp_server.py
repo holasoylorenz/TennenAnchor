@@ -278,6 +278,27 @@ TOOLS = [
             },
         },
     },
+    {
+        "name": "policy_execute",
+        "description": (
+            "Executes an abstract Behavior Tree policy (e.g. 'chrome_switch_tab', 'terminal_switch_tab') "
+            "with dynamic fallback branching, self-healing branch weighting, and zero ad-hoc script writing."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["policy_id"],
+            "properties": {
+                "policy_id": {
+                    "type": "string",
+                    "description": "The ID of the policy to execute (e.g. 'chrome_switch_tab', 'terminal_switch_tab').",
+                },
+                "params": {
+                    "type": "object",
+                    "description": "Optional parameters (e.g. {'index': 2}).",
+                },
+            },
+        },
+    },
 ]
 
 
@@ -632,6 +653,28 @@ def handle_app_lint_circuit(params: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def handle_policy_execute(params: Dict[str, Any]) -> str:
+    from policies.engine import PolicyEngine
+    policy_id = params.get("policy_id", "")
+    if not policy_id:
+        return "Error: 'policy_id' is required."
+    policy_params = params.get("params", {})
+    engine = PolicyEngine()
+    res = engine.execute(policy_id=policy_id, params=policy_params)
+    if res.get("status") == "ok":
+        lines = [
+            f"[POLICY EXECUTION SUCCESS: {policy_id}]",
+            f"Execution Time : {res.get('execution_time_ms')}ms",
+            f"Parameters     : {res.get('params')}",
+        ]
+        if res.get("telemetry"):
+            for t in res["telemetry"]:
+                lines.append(f"  - {t.get('event')}: {t.get('chosen_branch')} ({t.get('latency_ms', 0):.1f}ms)")
+        return "\n".join(lines)
+    else:
+        return f"[POLICY EXECUTION FAILED: {policy_id}]\nError: {res.get('error')}"
+
+
 def process_json_rpc(request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Processes incoming JSON-RPC 2.0 requests from AGY CLI."""
     method = request.get("method")
@@ -689,6 +732,8 @@ def process_json_rpc(request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                 raw_out = handle_app_design_circuit(arguments)
             elif tool_name == "app_lint_circuit":
                 raw_out = handle_app_lint_circuit(arguments)
+            elif tool_name == "policy_execute":
+                raw_out = handle_policy_execute(arguments)
             else:
                 return {
                     "jsonrpc": "2.0",

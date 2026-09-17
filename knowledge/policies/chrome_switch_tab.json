@@ -1,0 +1,171 @@
+{
+  "policy_id": "chrome_switch_tab",
+  "name": "Chrome Switch Tab",
+  "domain": "chrome",
+  "description": "Switches tabs in Google Chrome using direct indexed hotkeys, rightmost tab jump, UIA accessibility selection, or relative tab cycling without ad-hoc scripts.",
+  "tree": {
+    "id": "sel_chrome_tab",
+    "name": "Select Tab Switching Strategy",
+    "description": "",
+    "weight": 1.0,
+    "success_count": 1,
+    "failure_count": 0,
+    "type": "selector",
+    "children": [
+      {
+        "id": "seq_direct_index",
+        "name": "Direct Index Hotkey (Tabs 1-8)",
+        "description": "",
+        "weight": 1.1,
+        "success_count": 2,
+        "failure_count": 0,
+        "type": "sequence",
+        "children": [
+          {
+            "id": "cond_in_range_1_8",
+            "name": "cond_in_range_1_8",
+            "description": "",
+            "weight": 1.0,
+            "success_count": 0,
+            "failure_count": 0,
+            "type": "condition",
+            "predicate": {
+              "type": "in_range",
+              "var": "index",
+              "min": 1,
+              "max": 8
+            }
+          },
+          {
+            "id": "act_hotkey_ctrl_n",
+            "name": "act_hotkey_ctrl_n",
+            "description": "",
+            "weight": 1.0,
+            "success_count": 0,
+            "failure_count": 0,
+            "type": "action",
+            "action": {
+              "type": "hotkey",
+              "keys": [
+                "ctrl",
+                "{index}"
+              ],
+              "wait_ms": 200
+            }
+          }
+        ]
+      },
+      {
+        "id": "seq_last_tab",
+        "name": "Rightmost Tab Jump (Tab 9)",
+        "description": "",
+        "weight": 0.9,
+        "success_count": 0,
+        "failure_count": 0,
+        "type": "sequence",
+        "children": [
+          {
+            "id": "cond_is_tab_9",
+            "name": "cond_is_tab_9",
+            "description": "",
+            "weight": 1.0,
+            "success_count": 0,
+            "failure_count": 0,
+            "type": "condition",
+            "predicate": {
+              "type": "equals",
+              "var": "index",
+              "value": 9
+            }
+          },
+          {
+            "id": "act_hotkey_ctrl_9",
+            "name": "act_hotkey_ctrl_9",
+            "description": "",
+            "weight": 1.0,
+            "success_count": 0,
+            "failure_count": 0,
+            "type": "action",
+            "action": {
+              "type": "hotkey",
+              "keys": [
+                "ctrl",
+                "9"
+              ],
+              "wait_ms": 200
+            }
+          }
+        ]
+      },
+      {
+        "id": "seq_uia_selection",
+        "name": "UIA Accessibility Tree Selection",
+        "description": "",
+        "weight": 0.8,
+        "success_count": 0,
+        "failure_count": 0,
+        "type": "sequence",
+        "children": [
+          {
+            "id": "cond_has_tab_item",
+            "name": "cond_has_tab_item",
+            "description": "",
+            "weight": 1.0,
+            "success_count": 0,
+            "failure_count": 0,
+            "type": "condition",
+            "predicate": {
+              "type": "has_control",
+              "control_type": "TabItem",
+              "index": "{index}"
+            }
+          },
+          {
+            "id": "act_uia_select_tab",
+            "name": "act_uia_select_tab",
+            "description": "",
+            "weight": 1.0,
+            "success_count": 0,
+            "failure_count": 0,
+            "type": "action",
+            "action": {
+              "type": "uia_select",
+              "control_type": "TabItem",
+              "index": "{index}",
+              "wait_ms": 250
+            }
+          }
+        ]
+      },
+      {
+        "id": "seq_cycle_tabs",
+        "name": "Relative Cycling Fallback",
+        "description": "",
+        "weight": 0.5,
+        "success_count": 0,
+        "failure_count": 0,
+        "type": "sequence",
+        "children": [
+          {
+            "id": "act_ctrl_tab",
+            "name": "act_ctrl_tab",
+            "description": "",
+            "weight": 1.0,
+            "success_count": 0,
+            "failure_count": 0,
+            "type": "action",
+            "action": {
+              "type": "hotkey",
+              "keys": [
+                "ctrl",
+                "tab"
+              ],
+              "wait_ms": 250
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "updated_at": "2026-09-17T16:42:52Z"
+}

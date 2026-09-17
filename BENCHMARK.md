@@ -61,7 +61,7 @@ Simulated workload: Multi-step engineering workflow (e.g. open schematic $\to$ c
 To re-run these benchmarks on any machine:
 
 ```powershell
-py -3 scripts/run_benchmarks.py
+py -3 harness.py benchmark
 ```
 
 For the end-to-end multi-turn LTspice circuit simulation and parameter optimization experiment, see [**WALKTHROUGH.md**](WALKTHROUGH.md) or run:

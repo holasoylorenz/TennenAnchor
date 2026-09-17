@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated_at": "2026-09-15T22:18:24.192953+00:00",
+  "updated_at": "2026-09-17T16:49:50.353027+00:00",
   "events": [
     {
       "id": "fric_ltspice_001",
@@ -56,11 +56,11 @@
       "action": "recipe:run_simulation:step_1:click_control",
       "category": "EXECUTION_ERROR",
       "symptom": "Target control 'Run/Pause' not found in active window.",
-      "timestamp": "2026-09-13T19:33:02.462247+00:00",
+      "timestamp": "2026-09-17T16:46:41.480076+00:00",
       "severity": "high",
       "resolution": null,
       "refinement": null,
-      "occurrences": 4
+      "occurrences": 6
     },
     {
       "id": "fric_ltspice_006",
@@ -85,6 +85,18 @@
       "resolution": null,
       "refinement": null,
       "occurrences": 1
+    },
+    {
+      "id": "fric_test_008",
+      "app": "test",
+      "action": "policy_test_policy",
+      "category": "POLICY_FAILURE",
+      "symptom": "All fallback branches failed for policy 'test_policy' with params {'val': 99}",
+      "timestamp": "2026-09-17T16:49:50.353015+00:00",
+      "severity": "high",
+      "resolution": null,
+      "refinement": null,
+      "occurrences": 4
     }
   ]
 }
